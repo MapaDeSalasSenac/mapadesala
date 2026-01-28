@@ -84,7 +84,7 @@ body {
 .main-content {
     margin-left: 240px;
     margin-top: 60px;
-    padding: 30px 40px;
+    padding: 20px 30px;
 }
 
 /* MAPA DE SALAS */
@@ -97,13 +97,13 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 32px;
+    margin-bottom: 24px;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 16px;
 }
 
 .mapa-header h1 {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 700;
     color: #003A70;
     margin: 0;
@@ -113,38 +113,38 @@ body {
 .mapa-header h1::after {
     content: '';
     position: absolute;
-    bottom: -8px;
+    bottom: -6px;
     left: 0;
-    width: 80px;
-    height: 4px;
+    width: 70px;
+    height: 3px;
     background: #FF6B2C;
 }
 
 .mapa-controls {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
 }
 
 .periodo-filtro {
     display: flex;
     gap: 4px;
     background: white;
-    padding: 4px 8px;
-    border-radius: 30px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    padding: 3px 6px;
+    border-radius: 24px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
 }
 
 .periodo-btn {
-    padding: 8px 18px;
+    padding: 6px 14px;
     border: none;
     background: transparent;
     color: #666;
     font-weight: 600;
-    font-size: 15px;
+    font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
-    border-radius: 20px;
+    border-radius: 16px;
 }
 
 .periodo-btn:hover {
@@ -153,7 +153,7 @@ body {
 
 .periodo-btn.active {
     color: #FF6B2C;
-    background: rgba(255,107,44,0.15);
+    background: rgba(255,107,44,0.12);
     font-weight: 700;
 }
 
@@ -161,65 +161,55 @@ body {
     background: #003A70;
     color: white;
     border: none;
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    font-size: 20px;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    font-size: 18px;
     cursor: pointer;
-    transition: background 0.2s;
-}
-
-.filter-btn:hover {
-    background: #004a8f;
 }
 
 /* GRID DE SALAS */
 .salas-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
 }
 
+/* CARD COMPACTO */
 .sala-card {
-    background: #FFD4B8;
-    border-radius: 12px;
-    padding: 24px 20px;
-    text-align: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    transition: transform 0.2s, box-shadow 0.2s;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 12px 14px;
+    text-align: left;
+    min-height: 90px;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .sala-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    border-color: #FF6B2C;
+    box-shadow: 0 2px 8px rgba(255,107,44,0.15);
 }
 
+/* TÍTULO DA SALA */
 .sala-nome {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 700;
     color: #003A70;
-    margin-bottom: 16px;
+    margin-bottom: 8px;
 }
 
+/* LINHAS DE INFORMAÇÃO */
 .sala-info {
-    font-size: 15px;
+    font-size: 13px;
     color: #444;
-    margin: 6px 0;
-    line-height: 1.4;
+    margin: 3px 0;
+    line-height: 1.25;
 }
 
-.turno {
-    display: block;
-    font-size: 14px;
-    font-weight: 700;
-    color: #003A70;
-    margin-bottom: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.estado strong {
-    color: #FF6B2C;
+/* ESTADO – LARANJA ESCURO HARMONIOSO */
+.sala-info.estado {
+    color: #D95F00;          /* laranja escuro, harmonioso com #FF6B2C da topbar */
     font-weight: 600;
 }
 
@@ -258,23 +248,4 @@ body {
         flex: 1;
         justify-content: center;
     }
-}
-
-/* SCROLLBAR PERSONALIZADA (opcional, mas deixa mais bonito) */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #FF6B2C;
-    border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #e55a00;
 }
