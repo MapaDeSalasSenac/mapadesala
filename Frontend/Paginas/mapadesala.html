@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Salas - Senac MA</title>
+</head>
+<body>
+    <header class="topbar"> <!--=== PARTE DE CIMA ===-->
+        <button class="menu-toggle" aria-label="Abrir menu">☰</button>
+        <div class="topbar-logo">
+            <img src="../IMG/senac_logo_branco.png" alt="Logo Senac">
+        </div>
+        <button class="user-button" aria-label="Usuário">👤</button>
+    </header> <!--===  ===-->
+
+    <div class="layout"> <!--=== MENU DE NAVEGAÇÃO (A ESQUERDA) ===-->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item active">Mapa de Salas</li>
+                    <li class="nav-item">Mais</li>
+                </ul>
+            </nav>
+        </aside> <!--===  ===-->
+
+        <main class="content"> <!--=== O MEIO ===-->
+            <section class="mapa-salas">
+                <header class="mapa-header">
+                    <h1>Mapa de Salas</h1>
+
+                    <div class="mapa-controls">
+                        <div class="periodo-filtro">
+                            <button class="periodo-btn active" data-periodo="hoje">Hoje</button>
+                            <button class="periodo-btn" data-periodo="semana">Semana</button>
+                            <button class="periodo-btn" data-periodo="mes">Mês</button>
+                        </div>
+
+                        <button class="filter-button" aria-label="Filtros">🔍</button>
+                    </div>
+                </header>
+
+                <div class="salas-grid">
+                    <article class="sala-card" data-status="livre">
+                        <h2 class="sala-nome">Nome da Sala</h2>
+                        <p class="sala-status">Estado: <span><strong>livre</strong></span></p>
+                        <p class="sala-professor">Professor: <span><strong>Viny</strong></span></p>
+                    </article>
+                    <article class="sala-card" data-status="livre">
+                        <h2 class="sala-nome">Nome da Sala</h2>
+                        <p class="sala-status">Estado: <span><strong>livre</strong></span></p>
+                        <p class="sala-professor">Professor: <span><strong>Viny</strong></span></p>
+                    </article>
+                </div>
+                <div class="paginacao">
+                    <button class="page-btn prev">←</button>
+                    <button class="page-btn next">→</button>
+                </div>
+            </section>
+        </main> <!--===  ===-->
+
+        <aside class="detalhes-sala"> <!--=== INFORMAÇÕES DOS CARDS (A DIREITA) ===-->
+            <h2 class="detalhe-title">Nome da Sala</h2>
+            <div class="detalhe-card">
+                <p class="detalhe-item">Professor</p>
+                <p class="detalhe-item">Curso</p>
+                <p class="detalhe-item">Código da Turma</p>
+                <p class="detalhe-item">Turno</p>
+            </div>
+
+            <div class="detalhe-card">
+                <p class="detalhe-item">Professor</p>
+                <p class="detalhe-item">Curso</p>
+                <p class="detalhe-item">Código da Turma</p>
+                <p class="detalhe-item">Turno</p>
+            </div>
+
+            <div class="detalhe-card">
+                <p class="detalhe-item">Professor</p>
+                <p class="detalhe-item">Curso</p>
+                <p class="detalhe-item">Código da Turma</p>
+                <p class="detalhe-item">Turno</p>
+            </div>
+        </aside> <!--===  ===-->
+    </div>
+</body>
+</html>
