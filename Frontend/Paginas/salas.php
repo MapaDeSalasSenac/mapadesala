@@ -29,10 +29,10 @@
     <aside class="sidebar">
         <nav class="sidebar-nav">
             <ul>
-                <li class="nav-item">Mapa de Salas</li>
-                <li class="nav-item">Professores</li>
-                <li class="nav-item active">Salas</li>
-                <li class="nav-item">Turmas</li>
+                <li class="nav-item active"><a href="mapadesala.html" class="side-bar-content">Mapa de Salas</a></li>
+        <li class="nav-item"><a href="mapadesala.html" class="side-bar-content">Professores</a></li>
+        <li class="nav-item"><a href="mapadesala.html" class="side-bar-content">Salas</a></li>
+        <li class="nav-item"><a href="mapadesala.html" class="side-bar-content">Turmas</a></li>
             </ul>
         </nav>
     </aside>
