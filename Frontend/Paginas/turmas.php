@@ -46,10 +46,10 @@ $professores = $conexao->query("SELECT id_professor, nome, funcao FROM professor
     <aside class="sidebar">
         <nav class="sidebar-nav">
             <ul>
-                <li class="nav-item active"><a href="mapadesala.html" class="side-bar-content">Mapa de Salas</a></li>
-        <li class="nav-item"><a href="mapadesala.html" class="side-bar-content">Professores</a></li>
-        <li class="nav-item"><a href="mapadesala.html" class="side-bar-content">Salas</a></li>
-        <li class="nav-item"><a href="mapadesala.html" class="side-bar-content">Turmas</a></li>
+         <li class="nav-item active"><a href="mapadesala.html" class="side-bar-content">Mapa de Salas</a></li>
+        <li class="nav-item"><a href="professores.php" class="side-bar-content">Professores</a></li>
+        <li class="nav-item"><a href="salas.php" class="side-bar-content">Salas</a></li>
+        <li class="nav-item"><a href="turmas.php" class="side-bar-content">Turmas</a></li>
             </ul>
         </nav>
     </aside>

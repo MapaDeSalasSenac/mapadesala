@@ -191,7 +191,9 @@ body {
   inset: 0;
   display: none;
   z-index: 9999;
+
   font-size: 18px;
+  width: 100%;
 }
 
 /* Modal aberto */
@@ -204,17 +206,19 @@ body {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.55);
+
 }
 
 /* Caixa do modal */
 .modal__content {
   position: relative;
+  width: 400px;
+  margin: 5vh auto;
   background: #fff;
   border-radius: 14px;
   box-shadow: 0 20px 80px rgba(0,0,0,0.35);
+  overflow: hidden;
   animation: modalIn 180ms ease-out;
-  width: 400px;
-  margin: 5vh auto;
 }
 
 @keyframes modalIn {
@@ -257,3 +261,6 @@ body {
 }
 
 /* trava o scroll quando modal abrir */
+body.no-scroll {
+  overflow: hidden;
+}
