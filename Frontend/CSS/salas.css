@@ -21,6 +21,7 @@ body {
   background-color: var(--cinza-bg);
   color: var(--texto);
   display: flex;
+  position: relative;
 }
 
 /* TOPBAR */
@@ -160,7 +161,7 @@ body {
 }
 
 /* TEXTO */
-.professor-nome {
+.card-h3 {
   font-size: 18px;
   font-weight: 600;
 }
@@ -169,7 +170,7 @@ body {
   margin-top: 12px;
 }
 
-.turma-info {
+.content-info {
   font-size: 14px;
   margin: 8px 0;
 }
@@ -181,6 +182,9 @@ body {
   margin: 6px 0;
   border-radius: 2px;
 }
+
+
+
 
 /* Modal fechado por padrão */
 .modal {

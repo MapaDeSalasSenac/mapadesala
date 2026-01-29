@@ -160,7 +160,7 @@ body {
 }
 
 /* TEXTO */
-.professor-nome {
+.card-h3 {
   font-size: 18px;
   font-weight: 600;
 }
@@ -169,7 +169,7 @@ body {
   margin-top: 12px;
 }
 
-.turma-info {
+.content-info {
   font-size: 14px;
   margin: 8px 0;
 }
@@ -182,13 +182,13 @@ body {
   border-radius: 2px;
 }
 
+
 /* Modal fechado por padrão */
 .modal {
   position: absolute;
   inset: 0;
   display: none;
   z-index: 9999;
-
   font-size: 18px;
 }
 
@@ -207,14 +207,12 @@ body {
 /* Caixa do modal */
 .modal__content {
   position: relative;
-  width: 500px;
-  height: 380px;
-  margin: 30vh auto;
   background: #fff;
   border-radius: 14px;
   box-shadow: 0 20px 80px rgba(0,0,0,0.35);
-  overflow: hidden;
   animation: modalIn 180ms ease-out;
+  width: 400px;
+  margin: 5vh auto;
 }
 
 @keyframes modalIn {
@@ -257,33 +255,3 @@ body {
 }
 
 /* trava o scroll quando modal abrir */
-body.no-scroll {
-  overflow: hidden;
-}
-
-.modal__body form{
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-  justify-content: center;
-  align-items: center;
-
-  width: 430px;
-  height: 230px;
-}
-
-.modal__body form .inputs{
-  width: 430px;
-}
-
-.modal__body form .inputs label{
-  font-size: 20px;
-  margin-bottom: 20px;
-}
-
-
-.modal__body form .inputs input{
-  width: 420px;
-  padding: 10px;
-  font-size: 18px;
-}
