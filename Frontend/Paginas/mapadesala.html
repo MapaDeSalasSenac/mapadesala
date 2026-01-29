@@ -1,213 +1,70 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa de Salas - Senac MA</title>
-    <link rel="stylesheet" href="css/mapadesala.css">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mapa de Salas - Senac MA</title>
+
+  <link rel="stylesheet" href="../CSS/mapadesala.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="../JS/mapadesala.js" defer></script>
 </head>
+
 <body>
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-logo">
+      <img src="../IMG/senac_logo_branco.png" alt="Senac" />
+    </div>
 
-    <!-- TOPBAR LARANJA -->
-    <header class="topbar">
-        <button class="menu-toggle" aria-label="Abrir menu">☰</button>
-        <div class="topbar-logo">
-            <img src="../IMG/senac_logo_branco.png" alt="Senac">
+    <button class="user-button" id="user-btn" aria-label="Usuário" aria-expanded="false">👤</button>
+  </header>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <nav class="sidebar-nav">
+      <ul>
+        <li class="nav-item active">Mapa de Salas</li>
+        <li class="nav-item">Mais</li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-clock" id="sidebar-clock">--:--</div>
+      <div class="sidebar-credits">
+        Desenvolvido pela Turma Técnico de Informatica para a Internet
+      </div>
+    </div>
+  </aside>
+
+  <!-- Overlay mobile (futuro) -->
+  <div class="overlay-mobile"></div>
+
+  <!-- CONTEÚDO -->
+  <main class="main-content">
+    <section class="mapa-salas">
+      <header class="mapa-header">
+        <div class="mapa-title-wrap">
+          <h1>Mapa de salas</h1>
+          <div class="mapa-subtitle" id="mapa-subtitle"></div>
         </div>
-        <button class="user-button" aria-label="Usuário">👤</button>
-    </header>
 
-    <!-- SIDEBAR AZUL -->
-    <aside class="sidebar">
-        <nav class="sidebar-nav">
-            <ul>
-                <li class="nav-item active">Mapa de Salas</li>
-                <li class="nav-item">Mais</li>
-            </ul>
-        </nav>
-    </aside>
+        <div class="mapa-controls">
+          <div class="periodo-filtro" role="tablist" aria-label="Visualização">
+            <button class="periodo-btn active" data-view="day" role="tab" aria-selected="true">Hoje</button>
+            <button class="periodo-btn" data-view="week" role="tab" aria-selected="false">Semana</button>
+            <button class="periodo-btn" data-view="month" role="tab" aria-selected="false">Mês</button>
+          </div>
 
-    <!-- Overlay mobile -->
-    <div class="overlay-mobile"></div>
+          <button class="filter-btn" id="filter-btn" aria-label="Filtros">
+            <img src="../IMG/filtro.png" alt="Filtro" />
+          </button>
+        </div>
+      </header>
 
-    <!-- CONTEÚDO PRINCIPAL -->
-    <main class="main-content">
-        <section class="mapa-salas">
-            <header class="mapa-header">
-                <h1>Mapa de salas</h1>
-                <div class="mapa-controls">
-                    <div class="periodo-filtro">
-                        <button class="periodo-btn active">Hoje</button>
-                        <button class="periodo-btn">Semana</button>
-                        <button class="periodo-btn">Mês</button>
-                    </div>
-                    <button class="filter-btn" aria-label="Filtros">🔍</button>
-                </div>
-            </header>
-
-            <!-- GRID DE SALAS -->
-            <div class="salas-grid">
-
-                <div class="sala-card">
-                    <h2 class="sala-nome">Nome da Sala 01</h2>
-                    <p class="sala-info"><strong class="turno">MATUTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">VESPERTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">NOTURNO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                </div>
-
-                <div class="sala-card">
-                    <h2 class="sala-nome">Nome da Sala 02</h2>
-                    <p class="sala-info"><strong class="turno">MATUTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">VESPERTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">NOTURNO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                </div>
-
-                <div class="sala-card">
-                    <h2 class="sala-nome">Nome da Sala 03</h2>
-                    <p class="sala-info"><strong class="turno">MATUTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">VESPERTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">NOTURNO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                </div>
-
-                <div class="sala-card">
-                    <h2 class="sala-nome">Nome da Sala 04</h2>
-                    <p class="sala-info"><strong class="turno">MATUTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">VESPERTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">NOTURNO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                </div>
-
-                <div class="sala-card">
-                    <h2 class="sala-nome">Nome da Sala 05</h2>
-                    <p class="sala-info"><strong class="turno">MATUTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">VESPERTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">NOTURNO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                </div>
-
-                <div class="sala-card">
-                    <h2 class="sala-nome">Nome da Sala 06</h2>
-                    <p class="sala-info"><strong class="turno">MATUTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">VESPERTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">NOTURNO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                </div>
-
-                <div class="sala-card">
-                    <h2 class="sala-nome">Nome da Sala 07</h2>
-                    <p class="sala-info"><strong class="turno">MATUTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">VESPERTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">NOTURNO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                </div>
-
-                <div class="sala-card">
-                    <h2 class="sala-nome">Nome da Sala 08</h2>
-                    <p class="sala-info"><strong class="turno">MATUTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">VESPERTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">NOTURNO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                </div>
-
-                <div class="sala-card">
-                    <h2 class="sala-nome">Nome da Sala 09</h2>
-                    <p class="sala-info"><strong class="turno">MATUTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">VESPERTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">NOTURNO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                </div>
-
-                <div class="sala-card">
-                    <h2 class="sala-nome">Nome da Sala 10</h2>
-                    <p class="sala-info"><strong class="turno">MATUTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">VESPERTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">NOTURNO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                </div>
-
-                <div class="sala-card">
-                    <h2 class="sala-nome">Nome da Sala 11</h2>
-                    <p class="sala-info"><strong class="turno">MATUTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">VESPERTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">NOTURNO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                </div>
-
-                <div class="sala-card">
-                    <h2 class="sala-nome">Nome da Sala 12</h2>
-                    <p class="sala-info"><strong class="turno">MATUTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">VESPERTINO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                    <p class="sala-info"><strong class="turno">NOTURNO</strong></p>
-                    <p class="sala-info">Professor</p>
-                    <p class="sala-info estado"><strong>(Estado: em uso ou não)</strong></p>
-                </div>
-
-            </div>
-        </section>
-    </main>
-
+      <!-- Stage dinâmico -->
+      <div id="salas-container" class="salas-stage" aria-live="polite"></div>
+    </section>
+  </main>
 </body>
 </html>
