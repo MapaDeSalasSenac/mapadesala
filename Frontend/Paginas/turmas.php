@@ -1,5 +1,5 @@
 <?php
-require "php/conexao.php";
+require "../PHP/conexao.php";
 
 // Busca salas e professores já cadastrados
 $salas = $conexao->query("SELECT id_sala, nome_sala, capacidade FROM salas ORDER BY nome_sala ASC")
@@ -14,10 +14,10 @@ $professores = $conexao->query("SELECT id_professor, nome, funcao FROM professor
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Turma - Senac MA</title>
-    <link rel="stylesheet" href="css/mapadesala.css">
-    <link rel="stylesheet" href="css/turmas.css">
+    <link rel="stylesheet" href="../CSS/mapadesala.css">
+    <link rel="stylesheet" href="../CSS/turmas.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="js/turmas.js" defer></script>
+    <script src="../JS/turmas.js" defer></script>
     <style>
     .box{border:1px solid #ddd; border-radius:10px; padding:12px;}
     label{display:block; font-weight:600; margin-top:8px;}
@@ -100,7 +100,7 @@ $professores = $conexao->query("SELECT id_professor, nome, funcao FROM professor
     <div class="modal__body">
       <div class="grid">
   <div class="box">
-    <form id="formTurma" action="php/salvar_turma.php" method="POST">
+    <form id="formTurma" action="../PHP/salvar_turma.php" method="POST">
 
       <label>Sala</label>
       <select name="id_sala" id="id_sala" required>
@@ -131,8 +131,9 @@ $professores = $conexao->query("SELECT id_professor, nome, funcao FROM professor
       <label>Data de início</label>
       <input type="date" name="data_inicio" id="data_inicio" required>
 
-      <label>Quantidade de semanas</label>
-      <input type="number" name="qtd_semanas" id="qtd_semanas" min="1" required placeholder="Ex: 20">
+      <label>Carga horária (em horas)</label>
+      <input type="number" name="carga_horaria" id="carga_horaria" min="1" required placeholder="Ex: 80">
+
 
       <label>Dias da semana</label>
       <div class="dias">
@@ -169,64 +170,117 @@ $professores = $conexao->query("SELECT id_professor, nome, funcao FROM professor
   </div>
 </div>
 <script>
-  // Preview rápido só no front (sem consultar banco)
-  const mapDay = { seg:1, ter:2, qua:3, qui:4, sex:5, sab:6, dom:7 }; // 1..7 seg..dom
+  // Mapeia dias para números 1..7 (seg..dom)
+  const mapDay = { seg:1, ter:2, qua:3, qui:4, sex:5, sab:6, dom:7 };
+
+  const elPreview = document.getElementById('preview');
 
   function getCheckedDays() {
     return Array.from(document.querySelectorAll('input[name="dias_semana[]"]:checked'))
       .map(i => i.value);
   }
 
-  function fmtISO(d){ return d.toISOString().slice(0,10); }
+  function fmtISO(d) {
+    return d.toISOString().slice(0, 10);
+  }
 
-  function gerarPreview() {
-    const inicio = document.querySelector('#data_inicio').value;
-    const semanas = parseInt(document.querySelector('#qtd_semanas').value || '0', 10);
-    const dias = getCheckedDays();
-    const turno = document.querySelector('#turno').value;
+  // JS getDay(): 0=Dom..6=Sab -> converter p/ 1=Seg..7=Dom
+  function jsDayToISOWeekday(d) {
+    return ((d.getDay() + 6) % 7) + 1;
+  }
 
-    const el = document.querySelector('#preview');
+  function gerarCalendarioPorHoras({ inicioISO, cargaHoraria, turno, diasSelecionados }) {
+    const horasPorEncontro = (turno === 'noite') ? 3 : 4;
+    const totalEncontros = Math.ceil(cargaHoraria / horasPorEncontro);
 
-    if (!inicio || !semanas || dias.length === 0 || !turno) {
-      el.innerHTML = `<span class="warn">Preencha: data início, semanas, dias e turno pra gerar o preview.</span>`;
+    const diasSet = new Set(diasSelecionados.map(d => mapDay[d]).filter(Boolean));
+    const datas = [];
+
+    // Segurança: evita loop infinito
+    const maxDias = 366 * 3; // tenta até 3 anos
+    let tentativas = 0;
+
+    let d = new Date(inicioISO + "T00:00:00");
+    while (datas.length < totalEncontros) {
+      if (++tentativas > maxDias) {
+        throw new Error("Não consegui gerar datas (verifique dias e data de início).");
+      }
+
+      const weekday = jsDayToISOWeekday(d);
+      if (diasSet.has(weekday)) {
+        datas.push(fmtISO(d));
+      }
+
+      d.setDate(d.getDate() + 1);
+    }
+
+    // Horas do último encontro (pode ser menor)
+    const horasUltimo = cargaHoraria - ((totalEncontros - 1) * horasPorEncontro);
+
+    return {
+      horasPorEncontro,
+      totalEncontros,
+      datas,
+      primeiraData: datas[0],
+      ultimaData: datas[datas.length - 1],
+      horasUltimo
+    };
+  }
+
+  function renderPreview() {
+    const inicioISO = document.getElementById('data_inicio')?.value;
+    const cargaHoraria = parseInt(document.getElementById('carga_horaria')?.value || '0', 10);
+    const turno = document.getElementById('turno')?.value;
+    const diasSelecionados = getCheckedDays();
+
+    if (!inicioISO || !cargaHoraria || !turno || diasSelecionados.length === 0) {
+      elPreview.innerHTML = `<span style="color:#b00;font-weight:700;">
+        Preencha: data início, carga horária, turno e dias da semana.
+      </span>`;
       return;
     }
 
-    const start = new Date(inicio + "T00:00:00");
-    const end = new Date(start);
-    end.setDate(end.getDate() + (semanas * 7 - 1));
+    try {
+      const r = gerarCalendarioPorHoras({ inicioISO, cargaHoraria, turno, diasSelecionados });
 
-    const diasN = new Set(dias.map(d => mapDay[d]));
-    const datas = [];
+      const avisoUltimo = (r.horasUltimo < r.horasPorEncontro)
+        ? `<div style="margin-top:8px;color:#b00;font-weight:700;">
+             ⚠️ Último encontro terá ${r.horasUltimo}h (porque não fecha ${r.horasPorEncontro}h certinho).
+           </div>`
+        : '';
 
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      // JS getDay(): 0=Dom..6=Sab -> converter p/ 1=Seg..7=Dom
-      const n = ((d.getDay() + 6) % 7) + 1;
-      if (diasN.has(n)) datas.push(fmtISO(d));
+      elPreview.innerHTML = `
+        <div style="color:#070;font-weight:800;">✅ Prévia do calendário</div>
+        <div><b>Carga horária:</b> ${cargaHoraria}h</div>
+        <div><b>Turno:</b> ${turno}</div>
+        <div><b>Horas por encontro:</b> ${r.horasPorEncontro}h</div>
+        <div><b>Total de encontros:</b> ${r.totalEncontros}</div>
+        <div><b>Primeiro:</b> ${r.primeiraData} | <b>Último:</b> ${r.ultimaData}</div>
+        ${avisoUltimo}
+        <div style="margin-top:10px;"><b>Datas:</b><br>${r.datas.join(", ")}</div>
+      `;
+    } catch (err) {
+      elPreview.innerHTML = `<span style="color:#b00;font-weight:700;">
+        Erro no preview: ${String(err.message || err)}
+      </span>`;
     }
-
-    const primeira = datas[0];
-    const ultima = datas[datas.length - 1];
-
-    el.innerHTML =
-      `<div class="ok">✅ Encontros gerados: ${datas.length}</div>` +
-      `<div><b>Primeiro:</b> ${primeira} | <b>Último:</b> ${ultima} | <b>Turno:</b> ${turno}</div>` +
-      `<div style="margin-top:10px;"><b>Datas:</b><br>${datas.join(", ")}</div>`;
   }
 
-  document.querySelector('#btnPreview').addEventListener('click', gerarPreview);
+  // Botão preview
+  document.getElementById('btnPreview')?.addEventListener('click', renderPreview);
 
-  // Atualiza preview quando mexer nos campos
+  // Atualiza automaticamente quando mexer
   document.addEventListener('input', (e) => {
     if (
       e.target.id === 'data_inicio' ||
-      e.target.id === 'qtd_semanas' ||
+      e.target.id === 'carga_horaria' ||
       e.target.id === 'turno' ||
       e.target.name === 'dias_semana[]'
     ) {
-      gerarPreview();
+      renderPreview();
     }
   });
 </script>
+
 </body>
 </html>

@@ -11,7 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     if ($stmt->execute()) {
         echo "Usuário cadastrado com sucesso!";
-        header ('Location: ../salas.php');
+        header ('Location: ../Paginas/salas.php');
     } else {
         echo "Erro ao salvar.";
     }

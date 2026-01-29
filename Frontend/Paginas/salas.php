@@ -1,5 +1,5 @@
 <?php
-  require "php/conexao.php";
+  require "../PHP/conexao.php";
 
   $sql ="SELECT nome_sala, capacidade FROM salas";
   $result = $conexao->query($sql);
@@ -10,10 +10,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <link rel="stylesheet" href="css/mapadesala.css">
-    <link rel="stylesheet" href="css/salas.css">
+     <link rel="stylesheet" href="../CSS/mapadesala.css">
+    <link rel="stylesheet" href="../CSS/salas.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="js/salas.js"   defer></script>
+    <script src="../JS/salas.js"   defer></script>
     <title>Salas - Senac MA</title>
 </head>
 <body>

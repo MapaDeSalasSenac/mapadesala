@@ -1,5 +1,5 @@
 <?php
-  require "php/conexao.php";
+  require "../PHP/conexao.php";
 
   $sql ="SELECT nome, funcao FROM professores";
   $result = $conexao->query($sql);
@@ -12,9 +12,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Professores - Senac MA</title>
 
-  <link rel="stylesheet" href="css/professores.css">
+  <link rel="stylesheet" href="../CSS/professores.css">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="js/professores.js" defer></script>
+  <script src="../JS/professores.js" defer></script>
 </head>
 <body>
 

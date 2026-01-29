@@ -10,7 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $stmt->bind_param("ss", $nomeProfessor, $funcao);
 
     if ($stmt->execute()) {
-        header ('Location: ../professores.php');
+        header ('Location: ../Paginas/professores.php');
     } else {
         echo "Erro ao salvar.";
     }

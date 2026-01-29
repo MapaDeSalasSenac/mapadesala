@@ -11,7 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     if ($stmt->execute()) {
         echo "Usuário cadastrado com sucesso!";
-        header ('Location: ../turmas.php');
+        header ('Location: ../Paginas/turmas.php');
     } else {
         echo "Erro ao salvar.";
     }
