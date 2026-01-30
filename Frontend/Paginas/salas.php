@@ -77,7 +77,7 @@
         </header>
 
     <div class="modal__body">
-      <form action="php/criarSalas.php" method="POST">
+      <form action="../PHP/criarSalas.php" method="POST">
 
         <div class="inputs">
             <label for="nomeSala">Nome da Sala</label>

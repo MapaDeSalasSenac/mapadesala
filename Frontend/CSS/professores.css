@@ -210,8 +210,7 @@ body {
 .modal__content {
   position: relative;
   width: 500px;
-  height: 380px;
-  margin: 30vh auto;
+  margin: 15vh auto;
   background: #fff;
   border-radius: 14px;
   box-shadow: 0 20px 80px rgba(0,0,0,0.35);
@@ -271,7 +270,6 @@ body.no-scroll {
   align-items: center;
 
   width: 430px;
-  height: 230px;
 }
 
 .modal__body form .inputs{

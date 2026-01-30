@@ -1,7 +1,7 @@
 <?php
   require "../PHP/conexao.php";
 
-  $sql ="SELECT nome, funcao FROM professores";
+  $sql ="SELECT nome, formacao, telefone, email, cursos_complementares FROM professores";
   $result = $conexao->query($sql);
 ?>
 
@@ -62,13 +62,16 @@
         <div class="line"></div>
 
         <div class="info">
+          <p class="turma-info"><?= htmlspecialchars($row['formacao']) ?></p>
+          <div class="line"></div>
           <p class="turma-info">Turma</p>
           <div class="line"></div>
-          <p class="turma-info"><?= htmlspecialchars($row['funcao']) ?></p>
+          <p class="turma-info">Turno</p>
         </div>
       </div>
+      <?php endwhile; ?>
     </div>
-    <?php endwhile; ?>
+    
 
   </main>
 
@@ -82,15 +85,30 @@
         </header>
 
     <div class="modal__body">
-      <form action="php/criarProfessor.php" method="POST">
+      <form action="../PHP/criarProfessor.php" method="POST">
         <div class="inputs">
             <label for="nomeProfessor">Nome do Professor</label>
             <input type="text" name="nomeProfessor" class="nome_prof" id="nomeProfessor" placeholder="Digite o nome" required>
         </div>
 
         <div class="inputs">
-            <label for="funcao">Função</Label>
-            <input type="text" name="funcao" class="inputFun" id="inputFun" placeholder="Digite a função" required>
+            <label for="formacao">Formação</Label>
+            <input type="text" name="formacao" class="inputFormacao" id="inputFormacao" placeholder="Ex: Técnico em informática" required>
+        </div>
+        
+        <div class="inputs">
+            <label for="Telefone">Telefone</Label>
+            <input type="text" name="telefone" class="inputTel" id="inputTel" placeholder="Digite o número" maxlength="15" required>
+        </div>
+        
+        <div class="inputs">
+            <label for="email">Email</Label>
+            <input type="email" name="email" class="inputEmail" id="inputEmail" placeholder="Digite o email" required>
+        </div>
+        
+        <div class="inputs">
+            <label for="text">Cursos Complementares</Label>
+            <input type="text" name="cursosCompl" class="inputCompl" id="inputCompl" placeholder="Ex: Beleza, Estética, Informática...">
         </div>
 
         <button type="submit" class="buttonCriar">Criar</button>

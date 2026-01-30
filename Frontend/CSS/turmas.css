@@ -264,3 +264,8 @@ body {
 body.no-scroll {
   overflow: hidden;
 }
+
+.p_turno{
+  text-transform: capitalize;
+
+}
