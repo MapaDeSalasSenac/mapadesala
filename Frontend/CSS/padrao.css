@@ -1,0 +1,446 @@
+/* =====================================================
+   BASE GLOBAL (TODAS AS TELAS)
+===================================================== */
+*{ margin:0; padding:0; box-sizing:border-box; }
+
+:root{
+  --laranja:#FF6B2C;
+  --azul:#003A70;
+
+  --bg:#f8f9fa;
+  --texto:#111827;
+
+  --livre:#16a34a;
+  --ocupada:#dc2626;
+  --muted:#9ca3af;
+
+  --borda:#e5e7eb;
+}
+
+body{
+  font-family:'Montserrat',sans-serif;
+  background:var(--bg);
+  color:#333;
+  min-height:100vh;
+}
+
+/* =====================================================
+   TOPBAR
+===================================================== */
+.barra-topo{
+  background:var(--laranja);
+  height:60px;
+  position:fixed;
+  inset:0 0 auto 0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px;
+  z-index:1000;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+
+.logo-topo img{ height:38px; }
+
+.botao-usuario{
+  background:#fff;
+  border:none;
+  color:var(--laranja);
+  font-size:24px;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  cursor:pointer;
+}
+
+/* botão menu (só mobile) */
+.botao-menu{
+  border:none;
+  background:transparent;
+  color:#fff;
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  font-size:22px;
+  font-weight:900;
+  cursor:pointer;
+  display:none;
+}
+
+/* =====================================================
+   SIDEBAR
+===================================================== */
+.barra-lateral{
+  background:var(--azul);
+  width:240px;
+  position:fixed;
+  top:60px;
+  left:0;
+  bottom:0;
+  color:#fff;
+  padding-top:20px;
+  z-index:900;
+  transition:transform .3s ease;
+
+  display:flex;
+  flex-direction:column;
+}
+
+.barra-lateral ul{ list-style:none; }
+
+.barra-lateral .nav-lateral ul li a{
+  text-decoration:none;
+  color:#fff;
+  display:block;
+}
+
+.nav-lateral{ flex:1; }
+
+.item-nav{
+  padding:16px 24px;
+  cursor:pointer;
+  font-weight:500;
+  transition:background .2s;
+}
+.item-nav:hover,
+.item-nav.ativo{ background:rgba(255,255,255,.15); }
+
+.rodape-lateral{
+  margin-top:auto;
+  padding:14px 18px;
+  border-top:1px solid rgba(255,255,255,.12);
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.relogio-lateral{
+  font-weight:900;
+  letter-spacing:1px;
+  color:rgba(255,255,255,.92);
+  font-size:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;
+  padding:10px 12px;
+}
+
+.creditos-lateral{
+  font-size:11px;
+  font-weight:700;
+  line-height:1.25;
+  text-align:center;
+  color:rgba(255,255,255,.86);
+  opacity:.95;
+}
+.botao-sair-lateral{
+  width: 100%;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.92);
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  text-align: center;
+  transition: background .12s ease, transform .12s ease, border-color .12s ease;
+}
+
+.botao-sair-lateral:hover{
+  background: rgba(255,255,255,.10);
+  border-color: rgba(255,255,255,.28);
+  transform: translateY(-1px);
+}
+
+.botao-sair-lateral:active{
+  transform: translateY(0);
+}
+
+/* overlay do mobile (fecha sidebar) */
+.sobreposicao-mobile{
+  position:fixed;
+  inset:0;
+  background:rgba(17,24,39,0.45);
+  opacity:0;
+  pointer-events:none;
+  transition: opacity .18s ease;
+  z-index:850;
+}
+
+/* =====================================================
+   CONTEÚDO PADRÃO
+===================================================== */
+.conteudo-principal{
+  margin-left:240px;
+  margin-top:60px;
+  padding:20px 30px 40px;
+}
+
+/* header de página reaproveitável */
+.cabecalho-pagina{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:24px;
+  flex-wrap:wrap;
+  gap:16px;
+}
+
+.cabecalho-pagina h1{
+  font-size:26px;
+  font-weight:800;
+  color:var(--azul);
+  position:relative;
+}
+.cabecalho-pagina h1::after{
+  content:'';
+  position:absolute;
+  bottom:-6px;
+  left:0;
+  width:70px;
+  height:3px;
+  background:var(--laranja);
+}
+
+/* área de ações (ex: + e filtro) */
+.barra-acoes{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+/* botão ícone base */
+.botao-icone{
+  border:1px solid rgba(0,0,0,.10);
+  background:#fff;
+  width:36px;
+  height:36px;
+  border-radius:10px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  box-shadow:0 6px 18px rgba(0,0,0,.06);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.botao-icone:hover{
+  transform: translateY(-1px);
+  box-shadow:0 10px 22px rgba(0,0,0,.08);
+}
+
+/* botão de filtro (com bolinha quando ativo) */
+.botao-filtro{
+  position:relative;
+}
+.botao-filtro.tem-filtro::after{
+  content:'';
+  position:absolute;
+  top:6px;
+  right:6px;
+  width:9px;
+  height:9px;
+  border-radius:999px;
+  background:var(--laranja);
+  box-shadow:0 0 0 3px rgba(255,107,44,.18);
+}
+
+/* =====================================================
+   MENU USUÁRIO (POPOVER)
+===================================================== */
+.menu-usuario{
+  position:fixed;
+  top:66px;
+  right:18px;
+  width:220px;
+  background:#fff;
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:12px;
+  box-shadow:0 18px 34px rgba(0,0,0,.14);
+  overflow:hidden;
+  transform:translateY(-6px);
+  opacity:0;
+  pointer-events:none;
+  transition:transform .14s ease, opacity .14s ease;
+  z-index:2000;
+}
+.menu-usuario.aberto{
+  transform:translateY(0);
+  opacity:1;
+  pointer-events:auto;
+}
+.menu-usuario button{
+  width:100%;
+  border:none;
+  background:transparent;
+  text-align:left;
+  padding:12px 14px;
+  font-weight:900;
+  color:var(--texto);
+  cursor:pointer;
+}
+.menu-usuario button:hover{
+  background:rgba(255,107,44,.08);
+  color:var(--laranja);
+}
+
+/* =====================================================
+   MODAL BASE (FILTROS)
+===================================================== */
+.sobreposicao-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(17,24,39,.45);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .14s ease;
+  z-index:3000;
+}
+.sobreposicao-modal.aberto{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.modal{
+  width:min(560px, 100%);
+  background:#fff;
+  border-radius:16px;
+  border:1px solid rgba(0,0,0,.08);
+  box-shadow:0 22px 50px rgba(0,0,0,.18);
+  overflow:hidden;
+  transform:translateY(10px);
+  transition:transform .14s ease;
+}
+.sobreposicao-modal.aberto .modal{ transform:translateY(0); }
+
+.cabecalho-modal{
+  padding:14px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:1px solid rgba(0,0,0,.06);
+}
+.titulo-modal{
+  font-size:16px;
+  font-weight:900;
+  color:var(--texto);
+}
+.fechar-modal{
+  border:none;
+  background:rgba(0,0,0,.04);
+  border:1px solid rgba(0,0,0,.06);
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:900;
+}
+
+.corpo-modal{
+  padding:14px 16px;
+  display:grid;
+  gap:14px;
+}
+
+.campo{ display:grid; gap:8px; }
+.rotulo{
+  font-size:12px;
+  font-weight:900;
+  color:#374151;
+}
+.entrada{
+  border:1px solid rgba(0,0,0,.12);
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:800;
+  outline:none;
+}
+.entrada:focus{
+  border-color:rgba(255,107,44,.55);
+  box-shadow:0 0 0 4px rgba(255,107,44,.18);
+}
+
+.linha{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.pilula{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  border:1px solid rgba(0,0,0,.10);
+  background:rgba(0,0,0,.03);
+  border-radius:999px;
+  padding:8px 12px;
+  font-weight:900;
+  cursor:pointer;
+  user-select:none;
+}
+.pilula input{ accent-color:var(--laranja); }
+
+.acoes-modal{
+  display:flex;
+  gap:10px;
+  justify-content:flex-end;
+  padding:14px 16px;
+  border-top:1px solid rgba(0,0,0,.06);
+}
+
+.botao{
+  border:1px solid rgba(0,0,0,.12);
+  background:#fff;
+  border-radius:12px;
+  padding:10px 14px;
+  font-weight:900;
+  cursor:pointer;
+}
+.botao.primario{
+  background:rgba(255,107,44,.12);
+  border-color:rgba(255,107,44,.28);
+  color:var(--laranja);
+}
+.botao:hover{ transform:translateY(-1px); }
+
+/* =====================================================
+   RESPONSIVO: SIDEBAR OFF-CANVAS
+===================================================== */
+@media (max-width:1199px){
+  .botao-menu{ display:inline-flex; align-items:center; justify-content:center; }
+
+  .barra-lateral{
+    transform:translateX(-100%);
+    box-shadow:16px 0 40px rgba(0,0,0,0.18);
+  }
+
+  body.menu-lateral-aberto .barra-lateral{ transform:translateX(0); }
+  body.menu-lateral-aberto .sobreposicao-mobile{
+    opacity:1;
+    pointer-events:auto;
+  }
+
+  .conteudo-principal{ margin-left:0; }
+}
+
+@media (max-width:767px){
+  .barra-topo{ padding:0 14px; }
+  .logo-topo img{ height:32px; }
+  .conteudo-principal{ padding:16px 14px 32px; }
+
+  .cabecalho-pagina{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+  .barra-acoes{ width:100%; justify-content:flex-end; }
+  .menu-usuario{ right:10px; left:10px; width:auto; }
+
+  .acoes-modal{ flex-direction:column; }
+  .botao{ width:100%; }
+}
