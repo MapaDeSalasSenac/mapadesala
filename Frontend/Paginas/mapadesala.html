@@ -12,60 +12,61 @@
 
 <body>
   <!-- TOPBAR -->
-  <header class="topbar">
-    <div class="topbar-logo">
+  <header class="barra-topo">
+    <button class="botao-menu" id="botao-menu" aria-label="Abrir menu" aria-expanded="false">☰</button>
+
+    <div class="logo-topo">
       <img src="../IMG/senac_logo_branco.png" alt="Senac" />
     </div>
-
-    <button class="user-button" id="user-btn" aria-label="Usuário" aria-expanded="false">👤</button>
+    <button class="botao-usuario" id="botao-usuario" aria-label="Usuário" aria-expanded="false">👤</button>
   </header>
 
   <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <nav class="sidebar-nav">
+  <aside class="barra-lateral">
+    <nav class="nav-lateral">
       <ul>
-        <li class="nav-item active"><a href="mapadesala.html" class="side-bar-content">Mapa de Salas</a></li>
-        <li class="nav-item"><a href="professores.php" class="side-bar-content">Professores</a></li>
-        <li class="nav-item"><a href="salas.php" class="side-bar-content">Salas</a></li>
-        <li class="nav-item"><a href="turmas.php" class="side-bar-content">Turmas</a></li>
+        <li class="item-nav ativo"><a href="mapadesala.html" class="conteudo-barra-lateral">Mapa de Salas</a></li>
+        <li class="item-nav"><a href="professores.php" class="conteudo-barra-lateral">Professores</a></li>
+        <li class="item-nav"><a href="salas.php" class="conteudo-barra-lateral">Salas</a></li>
+        <li class="item-nav"><a href="turmas.php" class="conteudo-barra-lateral">Turmas</a></li>
       </ul>
     </nav>
 
-    <div class="sidebar-footer">
-      <div class="sidebar-clock" id="sidebar-clock">--:--</div>
-      <div class="sidebar-credits">
+    <div class="rodape-lateral">
+      <div class="relogio-lateral" id="relogio-lateral">--:--</div>
+      <div class="creditos-lateral">
         Desenvolvido pela Turma Técnico de Informatica para a Internet
       </div>
     </div>
   </aside>
 
   <!-- Overlay mobile (futuro) -->
-  <div class="overlay-mobile"></div>
+  <div class="sobreposicao-mobile"></div>
 
   <!-- CONTEÚDO -->
-  <main class="main-content">
+  <main class="conteudo-principal">
     <section class="mapa-salas">
-      <header class="mapa-header">
-        <div class="mapa-title-wrap">
+      <header class="cabecalho-mapa">
+        <div class="bloco-titulo-mapa">
           <h1>Mapa de salas</h1>
-          <div class="mapa-subtitle" id="mapa-subtitle"></div>
+          <div class="subtitulo-mapa" id="subtitulo-mapa"></div>
         </div>
 
-        <div class="mapa-controls">
-          <div class="periodo-filtro" role="tablist" aria-label="Visualização">
-            <button class="periodo-btn active" data-view="day" role="tab" aria-selected="true">Hoje</button>
-            <button class="periodo-btn" data-view="week" role="tab" aria-selected="false">Semana</button>
-            <button class="periodo-btn" data-view="month" role="tab" aria-selected="false">Mês</button>
+        <div class="controles-mapa">
+          <div class="filtro-periodo" role="tablist" aria-label="Visualização">
+            <button class="botao-periodo ativo" data-view="day" role="tab" aria-selected="true">Hoje</button>
+            <button class="botao-periodo" data-view="week" role="tab" aria-selected="false">Semana</button>
+            <button class="botao-periodo" data-view="month" role="tab" aria-selected="false">Mês</button>
           </div>
 
-          <button class="filter-btn" id="filter-btn" aria-label="Filtros">
+          <button class="botao-filtro" id="botao-filtro" aria-label="Filtros">
             <img src="../IMG/filtro.png" alt="Filtro" />
           </button>
         </div>
       </header>
 
       <!-- Stage dinâmico -->
-      <div id="salas-container" class="salas-stage" aria-live="polite"></div>
+      <div id="container-salas" class="palco-salas" aria-live="polite"></div>
     </section>
   </main>
 </body>

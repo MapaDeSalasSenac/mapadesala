@@ -1,46 +1,52 @@
 (() => {
   /* =====================================================
-     ELEMENTOS
+     ELEMENTOS (HTML)
   ===================================================== */
-  const stage = document.getElementById("salas-container");
-  const subtitleEl = document.getElementById("mapa-subtitle");
-  const btns = Array.from(document.querySelectorAll(".periodo-btn"));
-  const filterBtn = document.getElementById("filter-btn");
-  const userBtn = document.getElementById("user-btn");
-  const clockEl = document.getElementById("sidebar-clock");
+  const palco = document.getElementById("container-salas");
+  const subtituloEl = document.getElementById("subtitulo-mapa");
+
+  const botoesView = Array.from(document.querySelectorAll(".botao-periodo"));
+  const botaoFiltro = document.getElementById("botao-filtro");
+  const botaoUsuario = document.getElementById("botao-usuario");
+
+  const botaoMenu = document.getElementById("botao-menu");
+  const overlayMobile = document.querySelector(".sobreposicao-mobile");
+  const relogioEl = document.getElementById("relogio-lateral");
 
   /* =====================================================
      CONSTANTES
   ===================================================== */
-  const VIEW_ORDER = ["day", "week", "month"];
+  const ORDEM_VIEWS = ["day", "week", "month"];
 
   const TURNOS = [
-    { id: "matutino", label: "Manhã", range: [6, 12] },
-    { id: "vespertino", label: "Tarde", range: [12, 18] },
-    { id: "noturno", label: "Noite", range: [18, 23] },
+    { id: "matutino", rotulo: "Manhã", range: [6, 12] },
+    { id: "vespertino", rotulo: "Tarde", range: [12, 18] },
+    { id: "noturno", rotulo: "Noite", range: [18, 23] },
   ];
 
   /* =====================================================
-     ESTADO
+     ESTADO GLOBAL (NÃO use hífen em chave!)
   ===================================================== */
   const appState = {
     view: "day",
     date: toISODate(new Date()),
-    monthSelectedDate: null,
 
-    data: null, // { salas, agendamentos }
-    idx: null,  // Map slotKey -> agendamento
+    // mês
+    monthCursorISO: null,      // YYYY-MM-01 (mês visível)
+    monthSelectedDate: null,   // YYYY-MM-DD (dia selecionado)
 
-    filters: {
-      status: "all", // all | free | busy
+    data: null,                // { salas, agendamentos }
+    idx: null,                 // Map slotKey -> agendamento
+
+    filtros: {
+      status: "all", // all | livre | ocupada
       professor: "",
       turnos: { matutino: true, vespertino: true, noturno: true },
     },
   };
 
   /* =====================================================
-     MOCK (contrato realista)
-     -> No backend: troque apenas getData()
+     MOCK (troca por fetch depois)
   ===================================================== */
   const mockAPI = {
     salas: [
@@ -61,27 +67,19 @@
       { salaId: 1, data: shiftISO(toISODate(new Date()), 0), turno: "matutino", professor: "Carlos", curso: "Informática", codigoTurma: "TI-01" },
       { salaId: 1, data: shiftISO(toISODate(new Date()), 0), turno: "noturno", professor: "Ana", curso: "Redes", codigoTurma: "RD-02" },
       { salaId: 3, data: shiftISO(toISODate(new Date()), 0), turno: "vespertino", professor: "Marcos", curso: "Design", codigoTurma: "DS-03" },
-      { salaId: 4, data: shiftISO(toISODate(new Date()), 1), turno: "matutino", professor: "Juliana", curso: "Adm", codigoTurma: "AD-01" },
-      { salaId: 7, data: shiftISO(toISODate(new Date()), 2), turno: "noturno", professor: "Rita", curso: "Dev Web", codigoTurma: "DW-07" },
-      { salaId: 10, data: shiftISO(toISODate(new Date()), 3), turno: "vespertino", professor: "Paulo", curso: "Excel", codigoTurma: "EX-10" },
-      { salaId: 2, data: shiftISO(toISODate(new Date()), -1), turno: "matutino", professor: "Bruno", curso: "Segurança", codigoTurma: "SG-02" },
-      { salaId: 5, data: shiftISO(toISODate(new Date()), -2), turno: "noturno", professor: "Lívia", curso: "Marketing", codigoTurma: "MK-05" },
-      { salaId: 12, data: shiftISO(toISODate(new Date()), 5), turno: "matutino", professor: "Fernanda", curso: "RH", codigoTurma: "RH-12" },
-      { salaId: 6, data: startOfMonthISO(toISODate(new Date())), turno: "vespertino", professor: "Denis", curso: "Inglês", codigoTurma: "IN-06" },
-      { salaId: 9, data: shiftISO(startOfMonthISO(toISODate(new Date())), 8), turno: "matutino", professor: "Cíntia", curso: "Atendimento", codigoTurma: "AT-09" },
     ],
   };
 
-  async function getData() {
-    // Backend: substitua por fetch() e retorne { salas, agendamentos } no mesmo formato.
-    // Ex:
-    // const r = await fetch("SEU_ENDPOINT_AQUI");
+  async function carregarDados() {
+    // Quando for backend:
+    // const r = await fetch("../api/mapa_salas.php?json=1");
+    // if (!r.ok) throw new Error("Falha ao carregar backend");
     // return await r.json();
     return deepClone(mockAPI);
   }
 
   /* =====================================================
-     INDEX / CONSULTA
+     INDEX
   ===================================================== */
   function buildIndex(agendamentos) {
     const map = new Map();
@@ -94,7 +92,7 @@
   }
 
   /* =====================================================
-     "AGORA"
+     "AGORA" (só marcador)
   ===================================================== */
   function getTurnoNowId(date = new Date()) {
     const h = date.getHours();
@@ -106,20 +104,17 @@
   }
 
   function isPastTurno(turnoId, baseDateISO) {
-    const todayISO = toISODate(new Date());
-    if (baseDateISO !== todayISO) return false;
+    const hojeISO = toISODate(new Date());
+    if (baseDateISO !== hojeISO) return false;
 
     const nowId = getTurnoNowId(new Date());
     const order = ["matutino", "vespertino", "noturno"];
-    const nowIdx = order.indexOf(nowId);
-    const idx = order.indexOf(turnoId);
-    if (nowIdx === -1) return false;
-    return idx < nowIdx;
+    return order.indexOf(turnoId) < order.indexOf(nowId);
   }
 
   function isNowTurno(turnoId, baseDateISO) {
-    const todayISO = toISODate(new Date());
-    if (baseDateISO !== todayISO) return false;
+    const hojeISO = toISODate(new Date());
+    if (baseDateISO !== hojeISO) return false;
     return getTurnoNowId(new Date()) === turnoId;
   }
 
@@ -135,48 +130,33 @@
   }
 
   function enabledTurnosCount() {
-    return Object.values(appState.filters.turnos).filter(Boolean).length || 0;
+    return Object.values(appState.filtros.turnos).filter(Boolean).length || 0;
   }
 
   function professorMatches(booking) {
-    const q = norm(appState.filters.professor);
+    const q = norm(appState.filtros.professor);
     if (!q) return true;
     if (!booking) return false;
     return norm(booking.professor).includes(q);
   }
 
   function slotVisible(booking, turnoId) {
-    const f = appState.filters;
+    const f = appState.filtros;
+
     if (!f.turnos[turnoId]) return false;
 
     const hasProf = !!norm(f.professor);
-    if (hasProf && f.status === "free") return false; // livre não tem professor
+    if (hasProf && f.status === "livre") return false;
 
     if (hasProf) return !!booking && professorMatches(booking);
 
-    if (f.status === "busy") return !!booking;
-    if (f.status === "free") return !booking;
+    if (f.status === "ocupada") return !!booking;
+    if (f.status === "livre") return !booking;
     return true;
   }
 
-  function slotBarClass(booking, turnoId) {
-    const f = appState.filters;
-    const hasProf = !!norm(f.professor);
-
-    if (!f.turnos[turnoId]) return "muted";
-
-    if (hasProf) {
-      if (booking && professorMatches(booking)) return "busy";
-      return "muted";
-    }
-
-    if (f.status === "busy") return booking ? "busy" : "muted";
-    if (f.status === "free") return booking ? "muted" : "free";
-    return booking ? "busy" : "free";
-  }
-
-  function isFiltersDefault() {
-    const f = appState.filters;
+  function isFiltrosPadrao() {
+    const f = appState.filtros;
     return (
       f.status === "all" &&
       !norm(f.professor) &&
@@ -186,307 +166,250 @@
     );
   }
 
-  function updateFilterIndicator() {
-    if (!filterBtn) return;
-    filterBtn.classList.toggle("has-active", !isFiltersDefault());
+  function atualizarIndicadorFiltro() {
+    botaoFiltro?.classList.toggle("tem-filtro", !isFiltrosPadrao());
   }
 
   /* =====================================================
-     RENDER: DAY
+     RENDER: DIA
   ===================================================== */
   function renderDay(dateISO) {
-    const cards = appState.data.salas
-      .map((s) => {
-        const rows = TURNOS
-          .filter((t) => appState.filters.turnos[t.id])
-          .map((t) => {
-            const booking = getBooking(s.id, dateISO, t.id);
-            if (!slotVisible(booking, t.id)) return "";
+    const cards = appState.data.salas.map((s) => {
+      const linhas = TURNOS
+        .filter(t => appState.filtros.turnos[t.id])
+        .map((t) => {
+          const booking = getBooking(s.id, dateISO, t.id);
+          if (!slotVisible(booking, t.id)) return "";
 
-            const statusClass = booking ? "status--busy" : "status--free";
-            const badge = booking
-              ? `<span class="badge busy"><span class="dot"></span>Ocupada</span>`
-              : `<span class="badge free"><span class="dot"></span>Livre</span>`;
+          const statusClass = booking ? "status--ocupada" : "status--livre";
+          const badge = booking
+            ? `<span class="selo ocupada"><span class="ponto"></span>Ocupada</span>`
+            : `<span class="selo livre"><span class="ponto"></span>Livre</span>`;
 
-            const meta = booking
-              ? `${escapeHTML(booking.professor)} • ${escapeHTML(booking.curso)}`
-              : "Sem agendamento";
+          const meta = booking
+            ? `${escapeHTML(booking.professor)} • ${escapeHTML(booking.curso)}`
+            : "Sem agendamento";
 
-            const past = isPastTurno(t.id, dateISO) ? " is-past" : "";
-            const now = isNowTurno(t.id, dateISO) ? " is-now" : "";
+          const passado = isPastTurno(t.id, dateISO) ? " estado-passado" : "";
+          const agora = isNowTurno(t.id, dateISO) ? " estado-agora" : "";
 
-            return `
-              <div class="turno-row ${statusClass}${past}${now}">
-                <span class="turno-pill">${t.label}</span>
-                ${badge}
-                <div class="turno-meta" title="${escapeHTML(meta)}">${escapeHTML(meta)}</div>
-              </div>
-            `;
-          })
-          .filter(Boolean)
-          .join("");
-
-        if (!rows) return "";
-
-        return `
-          <div class="sala-card">
-            <div class="sala-head">
-              <h2 class="sala-nome">${escapeHTML(s.nome)}</h2>
-              <span class="sala-type">${escapeHTML(s.tipo || "Sala")}</span>
+          return `
+            <div class="linha-turno ${statusClass}${passado}${agora}">
+              <span class="etiqueta-turno">${t.rotulo}</span>
+              ${badge}
+              <div class="info-turno" title="${escapeHTML(meta)}">${escapeHTML(meta)}</div>
             </div>
-            <div class="turnos">${rows}</div>
-          </div>
-        `;
-      })
-      .filter(Boolean)
-      .join("");
+          `;
+        })
+        .filter(Boolean)
+        .join("");
 
-    return cards
-      ? `<div class="salas-grid">${cards}</div>`
-      : `<div class="details-empty">Nenhum resultado com os filtros atuais.</div>`;
-  }
-
-  /* =====================================================
-     RENDER: WEEK
-  ===================================================== */
-  function renderWeek(dateISO) {
-    const start = startOfWeekISO(dateISO);
-    const days = Array.from({ length: 7 }, (_, i) => shiftISO(start, i));
-    const dow = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-
-    const rows = appState.data.salas
-      .map((s) => {
-        let hasAnyMatch = false;
-
-        const daysHTML = days
-          .map((d) => {
-            const dt = new Date(d + "T00:00:00");
-            const dayNum = dt.getDate();
-            const dayDow = dow[dt.getDay()];
-
-            const bars = TURNOS
-              .filter((t) => appState.filters.turnos[t.id])
-              .map((t) => {
-                const booking = getBooking(s.id, d, t.id);
-                const cls = slotBarClass(booking, t.id);
-                if (cls !== "muted") hasAnyMatch = true;
-                return `<span class="week-bar ${cls}" title="${t.label}: ${cls === "busy" ? "Ocupada" : cls === "free" ? "Livre" : "—"}"></span>`;
-              })
-              .join("");
-
-            return `
-              <div class="week-day">
-                <div class="week-day-top">
-                  <span class="week-day-num">${dayNum}</span>
-                  <span class="week-day-dow">${dayDow}</span>
-                </div>
-                <div class="week-bars">${bars}</div>
-              </div>
-            `;
-          })
-          .join("");
-
-        if (!isFiltersDefault() && !hasAnyMatch) return "";
-
-        return `
-          <div class="week-row">
-            <div class="week-room">
-              <h2 class="sala-nome">${escapeHTML(s.nome)}</h2>
-              <span class="sala-type">${escapeHTML(s.tipo || "Sala")}</span>
-            </div>
-            <div class="week-days">${daysHTML}</div>
-          </div>
-        `;
-      })
-      .filter(Boolean)
-      .join("");
-
-    return rows
-      ? `<div class="week-list">${rows}</div>`
-      : `<div class="details-empty">Nenhum resultado com os filtros atuais.</div>`;
-  }
-
-  /* =====================================================
-     RENDER: MONTH DETAILS
-  ===================================================== */
-  function renderMonthDetails(dateISO) {
-    const salasById = new Map(appState.data.salas.map((s) => [s.id, s]));
-    const f = appState.filters;
-    const hasProf = !!norm(f.professor);
-
-    const enabledTurnos = TURNOS.filter((t) => f.turnos[t.id]).map((t) => t.id);
-    const totalSlots = appState.data.salas.length * (enabledTurnos.length || 1);
-
-    const busy = appState.data.agendamentos
-      .filter((a) => a.data === dateISO)
-      .filter((a) => f.turnos[a.turno])
-      .filter((a) => {
-        if (hasProf) return professorMatches(a);
-        if (f.status === "free") return false;
-        if (f.status === "busy") return true;
-        return true;
-      })
-      .map((a) => {
-        const sala = salasById.get(a.salaId) || { nome: `Sala ${a.salaId}`, tipo: "Sala" };
-        return {
-          salaNome: sala.nome,
-          salaTipo: sala.tipo || "Sala",
-          turno: a.turno,
-          professor: a.professor || "—",
-          curso: a.curso || "—",
-          codigoTurma: a.codigoTurma || a.turma || a.codigo || "",
-          kind: "busy",
-        };
-      });
-
-    const free = [];
-    if (f.status === "free" && !hasProf) {
-      for (const sala of appState.data.salas) {
-        for (const t of TURNOS) {
-          if (!f.turnos[t.id]) continue;
-          const booking = getBooking(sala.id, dateISO, t.id);
-          if (!booking) {
-            free.push({
-              salaNome: sala.nome,
-              salaTipo: sala.tipo || "Sala",
-              turno: t.id,
-              professor: "—",
-              curso: "—",
-              codigoTurma: "",
-              kind: "free",
-            });
-          }
-        }
-      }
-    }
-
-    const order = { matutino: 0, vespertino: 1, noturno: 2 };
-    const list = (f.status === "free" && !hasProf) ? free : busy;
-
-    list.sort(
-      (a, b) =>
-        (order[a.turno] ?? 9) - (order[b.turno] ?? 9) ||
-        a.salaNome.localeCompare(b.salaNome)
-    );
-
-    const count = list.length;
-    const summary =
-      (f.status === "free" && !hasProf)
-        ? `${count}/${totalSlots} livres`
-        : `${count}/${totalSlots} ocupados`;
-
-    if (!list.length) {
-      const msg =
-        hasProf && f.status === "free"
-          ? "Professor + Livre não retorna resultados (livre não tem professor)."
-          : "Nenhum resultado para este dia com os filtros atuais.";
+      if (!linhas) return "";
 
       return `
-        <div class="details-date">${formatDateBR(dateISO)}</div>
-        <div class="details-sub">${summary}</div>
-        <div class="details-empty">${msg}</div>
+        <div class="card-sala">
+          <div class="cabecalho-sala">
+            <h2 class="nome-sala">${escapeHTML(s.nome)}</h2>
+            <span class="tipo-sala">${escapeHTML(s.tipo || "Sala")}</span>
+          </div>
+          <div class="lista-turnos">${linhas}</div>
+        </div>
+      `;
+    }).filter(Boolean).join("");
+
+    return cards
+      ? `<div class="grade-salas">${cards}</div>`
+      : `<div class="vazio-painel">Nenhum resultado com os filtros atuais.</div>`;
+  }
+
+  /* =====================================================
+     RENDER: SEMANA (mantive simples)
+  ===================================================== */
+  function renderWeek(dateISO) {
+    const inicio = startOfWeekISO(dateISO);
+    const dias = Array.from({ length: 7 }, (_, i) => shiftISO(inicio, i));
+    const dow = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+    const rows = appState.data.salas.map((s) => {
+      let temMatch = false;
+
+      const diasHTML = dias.map((d) => {
+        const dt = new Date(d + "T00:00:00");
+        const diaNum = dt.getDate();
+        const diaDow = dow[dt.getDay()];
+
+        const bars = TURNOS
+          .filter(t => appState.filtros.turnos[t.id])
+          .map((t) => {
+            const booking = getBooking(s.id, d, t.id);
+            const cls =
+              !appState.filtros.turnos[t.id] ? "apagado" :
+              (appState.filtros.status === "ocupada" ? (booking ? "ocupada" : "apagado") :
+               appState.filtros.status === "livre" ? (!booking ? "livre" : "apagado") :
+               (booking ? "ocupada" : "livre"));
+
+            if (cls !== "apagado") temMatch = true;
+
+            return `<span class="barra-turno-semana ${cls}" title="${t.rotulo}"></span>`;
+          })
+          .join("");
+
+        return `
+          <div class="card-dia-semana">
+            <div class="topo-dia-semana">
+              <span class="numero-dia-semana">${diaNum}</span>
+              <span class="sigla-dia-semana">${diaDow}</span>
+            </div>
+            <div class="barras-turnos-semana">${bars}</div>
+          </div>
+        `;
+      }).join("");
+
+      if (!isFiltrosPadrao() && !temMatch) return "";
+
+      return `
+        <div class="linha-semana">
+          <div class="cabecalho-linha-semana">
+            <h2 class="nome-sala">${escapeHTML(s.nome)}</h2>
+            <span class="tipo-sala">${escapeHTML(s.tipo || "Sala")}</span>
+          </div>
+          <div class="grade-dias-semana">${diasHTML}</div>
+        </div>
+      `;
+    }).filter(Boolean).join("");
+
+    return rows
+      ? `<div class="lista-semana">${rows}</div>`
+      : `<div class="vazio-painel">Nenhum resultado com os filtros atuais.</div>`;
+  }
+
+  /* =====================================================
+     FERIADOS (BrasilAPI) - cache por ano
+  ===================================================== */
+  const feriadosCache = new Map(); // year -> Map(dateISO -> {name,type})
+
+  async function ensureFeriadosBR(ano) {
+    if (feriadosCache.has(ano)) return feriadosCache.get(ano);
+
+    const url = `https://brasilapi.com.br/api/feriados/v1/${ano}`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("Falha ao carregar feriados (BrasilAPI)");
+
+    const arr = await r.json();
+    const map = new Map();
+    for (const h of arr) map.set(h.date, { name: h.name, type: h.type });
+
+    feriadosCache.set(ano, map);
+    return map;
+  }
+
+  function getFeriado(dateISO) {
+    const ano = Number(dateISO.slice(0, 4));
+    return feriadosCache.get(ano)?.get(dateISO) || null;
+  }
+
+  /* =====================================================
+     RENDER: MÊS + PAINEL DIREITO
+  ===================================================== */
+  function renderPainelDia(dateISO) {
+    // simples: lista de ocupados no dia
+    const salasById = new Map(appState.data.salas.map(s => [s.id, s]));
+    const ag = appState.data.agendamentos.filter(a => a.data === dateISO);
+
+    if (!ag.length) {
+      return `
+        <div class="data-painel">${formatDateBR(dateISO)}</div>
+        <div class="subtitulo-painel">0 agendamentos</div>
+        <div class="vazio-painel">Nenhum agendamento para este dia.</div>
       `;
     }
 
-    const items = list
-      .map(
-        (item) => `
-        <div class="detail-item ${item.kind === "free" ? "is-free" : ""}">
-          <div class="detail-top">
-            <span class="turno-pill">${turnoLabel(item.turno)}</span>
-            <span class="detail-room" title="${escapeHTML(item.salaNome)}">
-              ${escapeHTML(item.salaNome)} • ${escapeHTML(item.salaTipo)}
-            </span>
+    const order = { matutino: 0, vespertino: 1, noturno: 2 };
+    ag.sort((a,b) => (order[a.turno] ?? 9) - (order[b.turno] ?? 9));
+
+    const itens = ag.map(a => {
+      const sala = salasById.get(a.salaId) || { nome: `Sala ${a.salaId}`, tipo:"Sala" };
+      return `
+        <div class="item-painel">
+          <div class="topo-item-painel">
+            <span class="etiqueta-turno">${turnoRotulo(a.turno)}</span>
+            <span class="sala-item-painel" title="${escapeHTML(sala.nome)}">${escapeHTML(sala.nome)} • ${escapeHTML(sala.tipo||"Sala")}</span>
           </div>
-
-          ${
-            item.kind === "busy"
-              ? `<div class="detail-prof">${escapeHTML(item.professor)}</div>`
-              : `<div class="detail-prof">Livre</div>`
-          }
-
-          ${
-            item.kind === "busy"
-              ? `<div class="detail-meta">${escapeHTML(item.curso)}${item.codigoTurma ? ` • ${escapeHTML(item.codigoTurma)}` : ""}</div>`
-              : `<div class="detail-meta">Sem agendamento</div>`
-          }
+          <div class="professor-item-painel">${escapeHTML(a.professor || "—")}</div>
+          <div class="meta-item-painel">${escapeHTML(a.curso || "—")}${a.codigoTurma ? ` • ${escapeHTML(a.codigoTurma)}` : ""}</div>
         </div>
-      `
-      )
-      .join("");
+      `;
+    }).join("");
 
     return `
-      <div class="details-date">${formatDateBR(dateISO)}</div>
-      <div class="details-sub">${summary}</div>
-      <div class="details-list">${items}</div>
+      <div class="data-painel">${formatDateBR(dateISO)}</div>
+      <div class="subtitulo-painel">${ag.length} agendamento(s)</div>
+      <div class="lista-painel">${itens}</div>
     `;
   }
 
-  /* =====================================================
-     RENDER: MONTH
-  ===================================================== */
   function renderMonth(dateISO) {
-    const first = startOfMonthISO(dateISO);
-    const { gridDays } = monthGrid(first);
-
+    if (!appState.monthCursorISO) appState.monthCursorISO = startOfMonthISO(dateISO);
     if (!appState.monthSelectedDate) appState.monthSelectedDate = dateISO;
 
-    const head = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
-      .map((x) => `<div>${x}</div>`)
-      .join("");
+    const first = appState.monthCursorISO;
+    const { gridDays } = monthGrid(first);
 
-    const enabled = enabledTurnosCount() || 1;
-    const totalSlotsPerDay = appState.data.salas.length * enabled;
-    const hasProf = !!norm(appState.filters.professor);
+    // carrega feriados do ano do mês (sem travar)
+    ensureFeriadosBR(Number(first.slice(0, 4))).catch(() => {});
 
-    const cells = gridDays
-      .map((d) => {
-        const out = d.slice(0, 7) !== first.slice(0, 7) ? " is-out" : "";
-        const sel = d === appState.monthSelectedDate ? " is-selected" : "";
-        const dayNum = new Date(d + "T00:00:00").getDate();
+    const titulo = new Date(first + "T00:00:00").toLocaleString("pt-BR", { month:"long", year:"numeric" });
 
-        let count = 0;
-        for (const s of appState.data.salas) {
-          for (const t of TURNOS) {
-            if (!appState.filters.turnos[t.id]) continue;
-            const booking = getBooking(s.id, d, t.id);
+    const head = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(x => `<div>${x}</div>`).join("");
 
-            if (hasProf) {
-              if (booking && professorMatches(booking) && appState.filters.status !== "free") count++;
-            } else if (appState.filters.status === "free") {
-              if (!booking) count++;
-            } else if (appState.filters.status === "busy") {
-              if (booking) count++;
-            } else {
-              if (booking) count++; // all -> mostra ocupados
-            }
-          }
-        }
+    const cells = gridDays.map(d => {
+      const fora = d.slice(0,7) !== first.slice(0,7) ? " fora-mes" : "";
+      const sel = d === appState.monthSelectedDate ? " selecionado" : "";
 
-        const pct = totalSlotsPerDay ? Math.round((count / totalSlotsPerDay) * 100) : 0;
-        const meta =
-          (!hasProf && appState.filters.status === "free")
-            ? `${count}/${totalSlotsPerDay} livres`
-            : `${count}/${totalSlotsPerDay} ocupados`;
+      const dayNum = new Date(d + "T00:00:00").getDate();
+      const feriado = getFeriado(d);
 
+      if (feriado) {
         return `
-          <button type="button" class="day-cell${out}${sel}" data-date="${d}">
-            <div class="day-num">${dayNum}</div>
-            <div class="occ-bar" style="--busy-pct:${pct}"></div>
-            <div class="occ-meta">${meta}</div>
+          <button type="button" class="celula-dia feriado${fora}" disabled>
+            <div class="numero-dia">${dayNum}</div>
+            <div class="etiqueta-feriado" title="${escapeHTML(feriado.name)}">${escapeHTML(feriado.name)}</div>
           </button>
         `;
-      })
-      .join("");
+      }
+
+      // só uma barra simples (ocupados do dia)
+      const total = appState.data.salas.length * (enabledTurnosCount() || 1);
+      let ocupados = 0;
+      for (const a of appState.data.agendamentos) {
+        if (a.data === d && appState.filtros.turnos[a.turno]) ocupados++;
+      }
+      const pct = total ? Math.round((ocupados / total) * 100) : 0;
+
+      return `
+        <button type="button" class="celula-dia${fora}${sel}" data-date="${d}">
+          <div class="numero-dia">${dayNum}</div>
+          <div class="barra-ocupacao" style="--busy-pct:${pct}"></div>
+          <div class="texto-ocupacao">${ocupados}/${total} ocupados</div>
+        </button>
+      `;
+    }).join("");
 
     return `
-      <div class="month-split">
-        <div class="month">
-          <div class="month-head">${head}</div>
-          <div class="month-grid">${cells}</div>
+      <div class="mes-dividido">
+        <div class="mes">
+          <div class="navegacao-mes">
+            <button class="botao-navegacao-mes" type="button" data-act="month-prev">‹</button>
+            <div class="titulo-navegacao-mes">${escapeHTML(titulo)}</div>
+            <button class="botao-navegacao-mes" type="button" data-act="month-next">›</button>
+          </div>
+
+          <div class="cabecalho-dias-mes">${head}</div>
+          <div class="grade-dias-mes">${cells}</div>
         </div>
-        <aside class="month-details" data-role="month-details">
-          ${renderMonthDetails(appState.monthSelectedDate)}
+
+        <aside class="painel-dia" data-role="painel-dia">
+          ${renderPainelDia(appState.monthSelectedDate)}
         </aside>
       </div>
     `;
@@ -500,7 +423,7 @@
   }
 
   /* =====================================================
-     SUBTITLE
+     SUBTÍTULO
   ===================================================== */
   function setSubtitle(view, dateISO) {
     const dt = new Date(dateISO + "T00:00:00");
@@ -508,13 +431,13 @@
     const year = dt.getFullYear();
     const day = dt.getDate();
 
-    if (view === "day") subtitleEl.textContent = `Hoje • ${day} de ${capitalize(month)} de ${year}`;
-    if (view === "week") subtitleEl.textContent = `Semana • a partir de ${formatDateBR(startOfWeekISO(dateISO))}`;
-    if (view === "month") subtitleEl.textContent = `Mês • ${capitalize(month)} de ${year}`;
+    if (view === "day") subtituloEl.textContent = `Hoje • ${day} de ${capitalize(month)} de ${year}`;
+    if (view === "week") subtituloEl.textContent = `Semana • a partir de ${formatDateBR(startOfWeekISO(dateISO))}`;
+    if (view === "month") subtituloEl.textContent = `Mês • ${capitalize(month)} de ${year}`;
   }
 
   /* =====================================================
-     STAGE HEIGHT (evita corte)
+     ALTURA DO PALCO
   ===================================================== */
   function measureViewHeight(viewEl) {
     const child = viewEl.firstElementChild;
@@ -526,33 +449,32 @@
 
   function setStageHeight(viewEl, animate = true) {
     const h = measureViewHeight(viewEl);
-    if (!animate) stage.style.transition = "none";
-    stage.style.height = h + "px";
+    if (!animate) palco.style.transition = "none";
+    palco.style.height = h + "px";
     if (!animate) {
-      stage.offsetHeight; // reflow
-      stage.style.transition = "";
+      palco.offsetHeight;
+      palco.style.transition = "";
     }
   }
 
   function rerenderCurrent() {
-    const current = stage.querySelector(".view");
+    const current = palco.querySelector(".tela");
     if (!current) return;
 
     current.innerHTML = render(appState.view, appState.date);
     setSubtitle(appState.view, appState.date);
-
     requestAnimationFrame(() => setStageHeight(current, true));
   }
 
   /* =====================================================
-     VIEW SWITCH (transição)
+     TROCA DE VIEW (animação)
   ===================================================== */
-  function viewIndex(v) { return VIEW_ORDER.indexOf(v); }
+  function viewIndex(v) { return ORDEM_VIEWS.indexOf(v); }
 
   function setActiveButton(view) {
-    btns.forEach((b) => {
+    botoesView.forEach((b) => {
       const active = b.dataset.view === view;
-      b.classList.toggle("active", active);
+      b.classList.toggle("ativo", active);
       b.setAttribute("aria-selected", active ? "true" : "false");
     });
   }
@@ -561,23 +483,28 @@
     const prevView = appState.view;
     if (nextView === prevView) return;
 
-    if (nextView === "month") appState.monthSelectedDate = appState.date;
+    // entrando no mês: inicializa cursor/seleção
+    if (nextView === "month") {
+      appState.monthCursorISO = startOfMonthISO(appState.date);
+      appState.monthSelectedDate = appState.date;
+      ensureFeriadosBR(Number(appState.monthCursorISO.slice(0, 4))).catch(() => {});
+    }
 
     const forward = viewIndex(nextView) > viewIndex(prevView);
-    const enterClass = forward ? "enter-from-right" : "enter-from-left";
-    const exitClass = forward ? "exit-to-left" : "exit-to-right";
+    const enterClass = forward ? "entra-da-direita" : "entra-da-esquerda";
+    const exitClass = forward ? "sai-para-esquerda" : "sai-para-direita";
 
-    const from = stage.querySelector(".view");
+    const from = palco.querySelector(".tela");
     const to = document.createElement("div");
-    to.className = `view ${enterClass}`;
+    to.className = `tela ${enterClass}`;
     to.innerHTML = render(nextView, appState.date);
-    stage.appendChild(to);
+    palco.appendChild(to);
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setStageHeight(to, true);
         if (from) from.classList.add(exitClass);
-        to.classList.add("enter-active");
+        to.classList.add("tela-ativa");
         to.classList.remove(enterClass);
       });
     });
@@ -586,7 +513,7 @@
       if (e.propertyName !== "transform") return;
       to.removeEventListener("transitionend", onEnd);
       if (from && from.parentNode) from.remove();
-      to.classList.add("enter-active");
+      to.classList.add("tela-ativa");
     };
     to.addEventListener("transitionend", onEnd);
 
@@ -596,11 +523,11 @@
   }
 
   function mountFirst() {
-    stage.innerHTML = "";
+    palco.innerHTML = "";
     const first = document.createElement("div");
-    first.className = "view enter-active";
+    first.className = "tela tela-ativa";
     first.innerHTML = render(appState.view, appState.date);
-    stage.appendChild(first);
+    palco.appendChild(first);
 
     setActiveButton(appState.view);
     setSubtitle(appState.view, appState.date);
@@ -608,221 +535,80 @@
   }
 
   /* =====================================================
-     MODAL FILTROS
+     MENU MOBILE (sidebar)
   ===================================================== */
-  let filterModalEl = null;
-
-  function openFilterModal() {
-    if (!filterModalEl) filterModalEl = buildFilterModal();
-    syncModalFromState(filterModalEl);
-    filterModalEl.classList.add("open");
-    document.body.style.overflow = "hidden";
-
-    const firstInput = filterModalEl.querySelector("input,button");
-    if (firstInput) firstInput.focus();
-  }
-
-  function closeFilterModal() {
-    if (!filterModalEl) return;
-    filterModalEl.classList.remove("open");
-    document.body.style.overflow = "";
-  }
-
-  function buildFilterModal() {
-    const overlay = document.createElement("div");
-    overlay.className = "modal-overlay";
-    overlay.innerHTML = `
-      <div class="modal" role="dialog" aria-modal="true" aria-label="Filtros">
-        <div class="modal-head">
-          <div class="modal-title">Filtros</div>
-          <button class="modal-close" type="button" data-act="close">✕</button>
-        </div>
-
-        <div class="modal-body">
-          <div class="field">
-            <div class="label">Status da sala</div>
-            <div class="row">
-              <label class="pill"><input type="radio" name="status" value="all"> Todos</label>
-              <label class="pill"><input type="radio" name="status" value="free"> Só livres</label>
-              <label class="pill"><input type="radio" name="status" value="busy"> Só ocupadas</label>
-            </div>
-          </div>
-
-          <div class="field">
-            <div class="label">Professor</div>
-            <input class="input" type="text" name="professor" placeholder="Ex: Carlos" />
-          </div>
-
-          <div class="field">
-            <div class="label">Turno</div>
-            <div class="row">
-              <label class="pill"><input type="checkbox" name="turno" value="matutino"> Manhã</label>
-              <label class="pill"><input type="checkbox" name="turno" value="vespertino"> Tarde</label>
-              <label class="pill"><input type="checkbox" name="turno" value="noturno"> Noite</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <button class="btn" type="button" data-act="clear">Limpar</button>
-          <button class="btn primary" type="button" data-act="apply">Aplicar</button>
-        </div>
-      </div>
-    `;
-
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) closeFilterModal();
-    });
-
-    overlay.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeFilterModal();
-    });
-
-    overlay.addEventListener("click", (e) => {
-      const act = e.target.closest("[data-act]")?.dataset.act;
-      if (!act) return;
-
-      if (act === "close") closeFilterModal();
-
-      if (act === "clear") {
-        appState.filters = {
-          status: "all",
-          professor: "",
-          turnos: { matutino: true, vespertino: true, noturno: true },
-        };
-        updateFilterIndicator();
-        syncModalFromState(overlay);
-        rerenderCurrent();
-      }
-
-      if (act === "apply") {
-        syncStateFromModal(overlay);
-        updateFilterIndicator();
-        rerenderCurrent();
-        closeFilterModal();
-      }
-    });
-
-    // garante que não fique "zero turnos" marcados
-    overlay.addEventListener("change", (e) => {
-      const t = e.target;
-      if (t?.name !== "turno") return;
-
-      const checks = overlay.querySelectorAll('input[name="turno"]');
-      let on = 0;
-      checks.forEach((c) => { if (c.checked) on++; });
-      if (on === 0) t.checked = true;
-    });
-
-    document.body.appendChild(overlay);
-    return overlay;
-  }
-
-  function syncModalFromState(overlay) {
-    const f = appState.filters;
-    overlay.querySelectorAll('input[name="status"]').forEach((r) => (r.checked = r.value === f.status));
-    overlay.querySelector('input[name="professor"]').value = f.professor;
-    overlay.querySelectorAll('input[name="turno"]').forEach((c) => (c.checked = !!f.turnos[c.value]));
-  }
-
-  function syncStateFromModal(overlay) {
-    const status = overlay.querySelector('input[name="status"]:checked')?.value || "all";
-    const professor = overlay.querySelector('input[name="professor"]')?.value || "";
-
-    const turnos = { matutino: false, vespertino: false, noturno: false };
-    overlay.querySelectorAll('input[name="turno"]').forEach((c) => (turnos[c.value] = !!c.checked));
-
-    appState.filters = { status, professor, turnos };
-    if (!enabledTurnosCount()) appState.filters.turnos.matutino = true;
-  }
-
-  /* =====================================================
-     MENU USUÁRIO
-  ===================================================== */
-  let userMenuEl = null;
-
-  function buildUserMenu() {
-    const pop = document.createElement("div");
-    pop.className = "user-popover";
-    pop.innerHTML = `<button type="button" data-act="logout">Sair</button>`;
-    document.body.appendChild(pop);
-
-    pop.addEventListener("click", (e) => {
-      const act = e.target.closest("[data-act]")?.dataset.act;
-      if (act === "logout") logout();
-    });
-
-    return pop;
-  }
-
-  function toggleUserMenu() {
-    if (!userMenuEl) userMenuEl = buildUserMenu();
-    const open = userMenuEl.classList.toggle("open");
-    userBtn?.setAttribute("aria-expanded", open ? "true" : "false");
-
-    if (open) document.addEventListener("click", onOutsideUserMenu, { capture: true });
-    else document.removeEventListener("click", onOutsideUserMenu, { capture: true });
-  }
-
-  function onOutsideUserMenu(e) {
-    if (!userMenuEl?.classList.contains("open")) return;
-    if (userMenuEl.contains(e.target)) return;
-    if (userBtn && userBtn.contains(e.target)) return;
-
-    userMenuEl.classList.remove("open");
-    userBtn?.setAttribute("aria-expanded", "false");
-    document.removeEventListener("click", onOutsideUserMenu, { capture: true });
-  }
-
-  function logout() {
-    // hook neutro: backend substitui por fluxo real
-    window.dispatchEvent(new CustomEvent("mapaSalas:logout"));
-    location.reload();
+  function setMenuLateralAberto(open) {
+    document.body.classList.toggle("menu-lateral-aberto", open);
+    botaoMenu?.setAttribute("aria-expanded", open ? "true" : "false");
   }
 
   /* =====================================================
      EVENTOS
   ===================================================== */
   function bindEvents() {
-    btns.forEach((btn) => btn.addEventListener("click", () => switchView(btn.dataset.view)));
+    // troca view
+    botoesView.forEach((btn) => btn.addEventListener("click", () => switchView(btn.dataset.view)));
 
-    stage.addEventListener("click", (e) => {
-      // clique em dia do mês -> painel direito
+    // menu lateral mobile
+    botaoMenu?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setMenuLateralAberto(!document.body.classList.contains("menu-lateral-aberto"));
+    });
+    overlayMobile?.addEventListener("click", () => setMenuLateralAberto(false));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") setMenuLateralAberto(false);
+    });
+
+    // clique dentro do palco (mês)
+    palco.addEventListener("click", async (e) => {
       if (appState.view !== "month") return;
 
-      const cell = e.target.closest(".day-cell[data-date]");
-      if (!cell) return;
+      const act = e.target.closest("[data-act]")?.dataset.act;
+      if (act === "month-prev" || act === "month-next") {
+        const delta = act === "month-prev" ? -1 : 1;
+        appState.monthCursorISO = addMonthsISO(appState.monthCursorISO, delta);
+        await ensureFeriadosBR(Number(appState.monthCursorISO.slice(0, 4))).catch(() => {});
+        // se a seleção saiu do mês, joga pro dia 1
+        if (appState.monthSelectedDate.slice(0,7) !== appState.monthCursorISO.slice(0,7)) {
+          appState.monthSelectedDate = appState.monthCursorISO;
+        }
+        rerenderCurrent();
+        return;
+      }
+
+      const cell = e.target.closest(".celula-dia[data-date]");
+      if (!cell || cell.disabled) return;
 
       const d = cell.dataset.date;
+      await ensureFeriadosBR(Number(d.slice(0, 4))).catch(() => {});
       appState.monthSelectedDate = d;
 
-      const current = stage.querySelector(".view");
+      const current = palco.querySelector(".tela");
       if (!current) return;
 
-      const prev = current.querySelector(".day-cell.is-selected");
-      if (prev) prev.classList.remove("is-selected");
-      cell.classList.add("is-selected");
+      const prev = current.querySelector(".celula-dia.selecionado");
+      if (prev) prev.classList.remove("selecionado");
+      cell.classList.add("selecionado");
+      cell.blur();
 
-      const details = current.querySelector('[data-role="month-details"]');
-      if (details) details.innerHTML = renderMonthDetails(d);
+      const painel = current.querySelector('[data-role="painel-dia"]');
+      if (painel) painel.innerHTML = renderPainelDia(d);
 
       setStageHeight(current, true);
     });
 
-    filterBtn?.addEventListener("click", openFilterModal);
-
-    userBtn?.addEventListener("click", (e) => {
+    // usuário (se quiser manter o popover, tu encaixa aqui depois)
+    botaoUsuario?.addEventListener("click", (e) => {
       e.stopPropagation();
-      toggleUserMenu();
+      // placeholder
     });
 
     window.addEventListener("resize", () => {
-      const current = stage.querySelector(".view");
+      const current = palco.querySelector(".tela");
       if (!current) return;
       setStageHeight(current, false);
     });
 
-    // atualiza "agora" no day (só re-render)
     setInterval(() => {
       if (appState.view === "day") rerenderCurrent();
     }, 60_000);
@@ -832,13 +618,13 @@
      RELÓGIO
   ===================================================== */
   function startClock() {
-    if (!clockEl) return;
+    if (!relogioEl) return;
 
     const tick = () => {
       const d = new Date();
       const hh = String(d.getHours()).padStart(2, "0");
       const mm = String(d.getMinutes()).padStart(2, "0");
-      clockEl.textContent = `${hh}:${mm}`;
+      relogioEl.textContent = `${hh}:${mm}`;
     };
 
     tick();
@@ -849,10 +635,12 @@
      INIT
   ===================================================== */
   async function init() {
-    appState.data = await getData();
+    appState.data = await carregarDados();
     appState.idx = buildIndex(appState.data.agendamentos);
 
-    updateFilterIndicator();
+    await ensureFeriadosBR(new Date().getFullYear()).catch(() => {});
+    atualizarIndicadorFiltro();
+
     mountFirst();
     bindEvents();
     startClock();
@@ -890,11 +678,17 @@
     return toISODate(d);
   }
 
+  function addMonthsISO(monthISO, delta) {
+    const d = new Date(monthISO + "T00:00:00");
+    d.setMonth(d.getMonth() + delta);
+    d.setDate(1);
+    return toISODate(d);
+  }
+
   function monthGrid(monthFirstISO) {
     const first = new Date(monthFirstISO + "T00:00:00");
     const gridStart = new Date(first);
     gridStart.setDate(first.getDate() - first.getDay());
-
     const gridStartISO = toISODate(gridStart);
     const gridDays = Array.from({ length: 42 }, (_, i) => shiftISO(gridStartISO, i));
     return { gridDays };
@@ -919,13 +713,11 @@
     return `${d}/${m}/${y}`;
   }
 
-  function turnoLabel(turnoId) {
-    const t = TURNOS.find((x) => x.id === turnoId);
-    return t ? t.label : turnoId;
+  function turnoRotulo(turnoId) {
+    return TURNOS.find(t => t.id === turnoId)?.rotulo || turnoId;
   }
 
   function deepClone(obj) {
-    // structuredClone é ótimo, mas esse fallback deixa rodar em qualquer browser
     if (typeof structuredClone === "function") return structuredClone(obj);
     return JSON.parse(JSON.stringify(obj));
   }
