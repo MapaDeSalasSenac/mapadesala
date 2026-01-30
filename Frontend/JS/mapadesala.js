@@ -25,7 +25,7 @@
   ];
 
   /* =====================================================
-     ESTADO GLOBAL (NÃO use hífen em chave!)
+     ESTADO GLOBAL
   ===================================================== */
   const appState = {
     view: "day",
@@ -171,6 +171,195 @@
   }
 
   /* =====================================================
+     MODAL: FILTROS
+  ===================================================== */
+  let modalFiltrosEl = null;
+
+  function abrirModalFiltros() {
+    if (!modalFiltrosEl) modalFiltrosEl = criarModalFiltros();
+    sincronizarModalComEstado(modalFiltrosEl);
+
+    modalFiltrosEl.classList.add("aberto");
+    document.body.style.overflow = "hidden";
+
+    const primeiro = modalFiltrosEl.querySelector("input,button");
+    if (primeiro) primeiro.focus();
+  }
+
+  function fecharModalFiltros() {
+    if (!modalFiltrosEl) return;
+    modalFiltrosEl.classList.remove("aberto");
+    document.body.style.overflow = "";
+  }
+
+  function criarModalFiltros() {
+    const overlay = document.createElement("div");
+    overlay.className = "sobreposicao-modal";
+
+    overlay.innerHTML = `
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Filtros">
+        <div class="cabecalho-modal">
+          <div class="titulo-modal">Filtros</div>
+          <button class="fechar-modal" type="button" data-acao="fechar">✕</button>
+        </div>
+
+        <div class="corpo-modal">
+          <div class="campo">
+            <div class="rotulo">Status da sala</div>
+            <div class="linha">
+              <label class="pilula"><input type="radio" name="status" value="all"> Todos</label>
+              <label class="pilula"><input type="radio" name="status" value="livre"> Só livres</label>
+              <label class="pilula"><input type="radio" name="status" value="ocupada"> Só ocupadas</label>
+            </div>
+          </div>
+
+          <div class="campo">
+            <div class="rotulo">Professor</div>
+            <input class="entrada" type="text" name="professor" placeholder="Ex: Carlos" />
+          </div>
+
+          <div class="campo">
+            <div class="rotulo">Turno</div>
+            <div class="linha">
+              <label class="pilula"><input type="checkbox" name="turno" value="matutino"> Manhã</label>
+              <label class="pilula"><input type="checkbox" name="turno" value="vespertino"> Tarde</label>
+              <label class="pilula"><input type="checkbox" name="turno" value="noturno"> Noite</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="acoes-modal">
+          <button class="botao" type="button" data-acao="limpar">Limpar</button>
+          <button class="botao primario" type="button" data-acao="aplicar">Aplicar</button>
+        </div>
+      </div>
+    `;
+
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) fecharModalFiltros();
+    });
+
+    overlay.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") fecharModalFiltros();
+    });
+
+    overlay.addEventListener("click", (e) => {
+      const acao = e.target.closest("[data-acao]")?.dataset.acao;
+      if (!acao) return;
+
+      if (acao === "fechar") fecharModalFiltros();
+
+      if (acao === "limpar") {
+        appState.filtros = {
+          status: "all",
+          professor: "",
+          turnos: { matutino: true, vespertino: true, noturno: true },
+        };
+        atualizarIndicadorFiltro();
+        sincronizarModalComEstado(overlay);
+        rerenderCurrent();
+      }
+
+      if (acao === "aplicar") {
+        sincronizarEstadoComModal(overlay);
+        atualizarIndicadorFiltro();
+        rerenderCurrent();
+        fecharModalFiltros();
+      }
+    });
+
+    overlay.addEventListener("change", (e) => {
+      const t = e.target;
+      if (t?.name !== "turno") return;
+
+      const checks = overlay.querySelectorAll('input[name="turno"]');
+      let on = 0;
+      checks.forEach((c) => { if (c.checked) on++; });
+      if (on === 0) t.checked = true;
+    });
+
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+
+  function sincronizarModalComEstado(overlay) {
+    const f = appState.filtros;
+
+    overlay.querySelectorAll('input[name="status"]').forEach((r) => {
+      r.checked = (r.value === f.status);
+    });
+
+    overlay.querySelector('input[name="professor"]').value = f.professor || "";
+
+    overlay.querySelectorAll('input[name="turno"]').forEach((c) => {
+      c.checked = !!f.turnos[c.value];
+    });
+  }
+
+  function sincronizarEstadoComModal(overlay) {
+    const status = overlay.querySelector('input[name="status"]:checked')?.value || "all";
+    const professor = overlay.querySelector('input[name="professor"]')?.value || "";
+
+    const turnos = { matutino: false, vespertino: false, noturno: false };
+    overlay.querySelectorAll('input[name="turno"]').forEach((c) => {
+      turnos[c.value] = !!c.checked;
+    });
+
+    appState.filtros = { status, professor, turnos };
+
+    if (!Object.values(appState.filtros.turnos).some(Boolean)) {
+      appState.filtros.turnos.matutino = true;
+    }
+  }
+
+  /* =====================================================
+     MENU: USUÁRIO / LOGOFF
+  ===================================================== */
+  let menuUsuarioEl = null;
+
+  function criarMenuUsuario() {
+    const pop = document.createElement("div");
+    pop.className = "menu-usuario";
+    pop.innerHTML = `<button type="button" data-acao="sair">Sair</button>`;
+    document.body.appendChild(pop);
+
+    pop.addEventListener("click", (e) => {
+      const acao = e.target.closest("[data-acao]")?.dataset.acao;
+      if (acao === "sair") fazerLogout();
+    });
+
+    return pop;
+  }
+
+  function abrirFecharMenuUsuario() {
+    if (!menuUsuarioEl) menuUsuarioEl = criarMenuUsuario();
+
+    const abriu = menuUsuarioEl.classList.toggle("aberto");
+    botaoUsuario?.setAttribute("aria-expanded", abriu ? "true" : "false");
+
+    if (abriu) {
+      document.addEventListener("click", fecharMenuUsuarioAoClicarFora, { capture: true });
+    } else {
+      document.removeEventListener("click", fecharMenuUsuarioAoClicarFora, { capture: true });
+    }
+  }
+
+  function fecharMenuUsuarioAoClicarFora(e) {
+    if (!menuUsuarioEl?.classList.contains("aberto")) return;
+    if (menuUsuarioEl.contains(e.target)) return;
+    if (botaoUsuario && botaoUsuario.contains(e.target)) return;
+
+    menuUsuarioEl.classList.remove("aberto");
+    botaoUsuario?.setAttribute("aria-expanded", "false");
+    document.removeEventListener("click", fecharMenuUsuarioAoClicarFora, { capture: true });
+  }
+
+  function fazerLogout() {
+    window.dispatchEvent(new CustomEvent("mapaSalas:logout"));
+    location.reload();
+  }
+
+  /* =====================================================
      RENDER: DIA
   ===================================================== */
   function renderDay(dateISO) {
@@ -223,7 +412,7 @@
   }
 
   /* =====================================================
-     RENDER: SEMANA (mantive simples)
+     RENDER: SEMANA
   ===================================================== */
   function renderWeek(dateISO) {
     const inicio = startOfWeekISO(dateISO);
@@ -242,11 +431,11 @@
           .filter(t => appState.filtros.turnos[t.id])
           .map((t) => {
             const booking = getBooking(s.id, d, t.id);
+
             const cls =
-              !appState.filtros.turnos[t.id] ? "apagado" :
-              (appState.filtros.status === "ocupada" ? (booking ? "ocupada" : "apagado") :
-               appState.filtros.status === "livre" ? (!booking ? "livre" : "apagado") :
-               (booking ? "ocupada" : "livre"));
+              appState.filtros.status === "ocupada" ? (booking ? "ocupada" : "apagado") :
+              appState.filtros.status === "livre" ? (!booking ? "livre" : "apagado") :
+              (booking ? "ocupada" : "livre");
 
             if (cls !== "apagado") temMatch = true;
 
@@ -312,7 +501,6 @@
      RENDER: MÊS + PAINEL DIREITO
   ===================================================== */
   function renderPainelDia(dateISO) {
-    // simples: lista de ocupados no dia
     const salasById = new Map(appState.data.salas.map(s => [s.id, s]));
     const ag = appState.data.agendamentos.filter(a => a.data === dateISO);
 
@@ -355,9 +543,7 @@
     const first = appState.monthCursorISO;
     const { gridDays } = monthGrid(first);
 
-    // carrega feriados do ano do mês (sem travar)
     ensureFeriadosBR(Number(first.slice(0, 4))).catch(() => {});
-
     const titulo = new Date(first + "T00:00:00").toLocaleString("pt-BR", { month:"long", year:"numeric" });
 
     const head = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(x => `<div>${x}</div>`).join("");
@@ -378,7 +564,6 @@
         `;
       }
 
-      // só uma barra simples (ocupados do dia)
       const total = appState.data.salas.length * (enabledTurnosCount() || 1);
       let ocupados = 0;
       for (const a of appState.data.agendamentos) {
@@ -483,7 +668,6 @@
     const prevView = appState.view;
     if (nextView === prevView) return;
 
-    // entrando no mês: inicializa cursor/seleção
     if (nextView === "month") {
       appState.monthCursorISO = startOfMonthISO(appState.date);
       appState.monthSelectedDate = appState.date;
@@ -547,7 +731,18 @@
   ===================================================== */
   function bindEvents() {
     // troca view
-    botoesView.forEach((btn) => btn.addEventListener("click", () => switchView(btn.dataset.view)));
+    botoesView.forEach((btn) =>
+      btn.addEventListener("click", () => switchView(btn.dataset.view))
+    );
+
+    // abrir filtros
+    botaoFiltro?.addEventListener("click", abrirModalFiltros);
+
+    // menu usuário (sair)
+    botaoUsuario?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      abrirFecharMenuUsuario();
+    });
 
     // menu lateral mobile
     botaoMenu?.addEventListener("click", (e) => {
@@ -555,8 +750,16 @@
       setMenuLateralAberto(!document.body.classList.contains("menu-lateral-aberto"));
     });
     overlayMobile?.addEventListener("click", () => setMenuLateralAberto(false));
+
+    // ESC fecha: sidebar + modal + menu usuário
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") setMenuLateralAberto(false);
+      if (e.key !== "Escape") return;
+      setMenuLateralAberto(false);
+      fecharModalFiltros();
+      if (menuUsuarioEl?.classList.contains("aberto")) {
+        menuUsuarioEl.classList.remove("aberto");
+        botaoUsuario?.setAttribute("aria-expanded", "false");
+      }
     });
 
     // clique dentro do palco (mês)
@@ -568,7 +771,6 @@
         const delta = act === "month-prev" ? -1 : 1;
         appState.monthCursorISO = addMonthsISO(appState.monthCursorISO, delta);
         await ensureFeriadosBR(Number(appState.monthCursorISO.slice(0, 4))).catch(() => {});
-        // se a seleção saiu do mês, joga pro dia 1
         if (appState.monthSelectedDate.slice(0,7) !== appState.monthCursorISO.slice(0,7)) {
           appState.monthSelectedDate = appState.monthCursorISO;
         }
@@ -595,12 +797,6 @@
       if (painel) painel.innerHTML = renderPainelDia(d);
 
       setStageHeight(current, true);
-    });
-
-    // usuário (se quiser manter o popover, tu encaixa aqui depois)
-    botaoUsuario?.addEventListener("click", (e) => {
-      e.stopPropagation();
-      // placeholder
     });
 
     window.addEventListener("resize", () => {
