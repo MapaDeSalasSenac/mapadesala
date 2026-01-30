@@ -1,0 +1,111 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color:#0b2874;
+    height: 100vh;
+    gap: 30px;
+    color: white;
+    text-align: center;
+}
+
+/* Título do topo */
+.container h1{
+    font-size: 40px;
+    font-weight: 600;
+}
+
+/* Card de login */
+.boxLogin{
+    width: 360px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: white;
+    color: black;
+    padding: 40px 30px;
+    border-radius: 16px;
+    gap: 25px;
+}
+
+/* Cabeçalho do card */
+.headerLogin h1{
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.headerLogin h3{
+    font-size: 16px;
+    font-weight: normal;
+    color: #555;
+}
+
+/* Conjunto dos inputs */
+.conjunto{
+    width: 100%;
+}
+
+/* Labels + inputs */
+.boxContent{
+    margin-bottom: 18px;
+}
+
+.boxContent h4{
+    text-align: left;
+    font-size: 16   px;
+    margin-bottom: 6px;
+    color: #333;
+}
+
+/* Inputs */
+.boxContent input{
+    width: 100%;
+    height: 36px;
+    border: none;
+    border-radius: 6px;
+    background-color: #e0e0e0;
+    padding: 0 10px;
+    outline: none;
+}
+
+/* Botão */
+.boxContent button{
+    width: 100%;
+    height: 38px;
+    margin-top: 10px;
+    background-color: #0b2874;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.boxContent button:hover{
+    background-color: #081f5c;
+}
+
+/* Texto de recuperar senha */
+.boxContent p{
+    margin-top: 10px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.boxContent a{
+    color: #0b2874;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.boxContent a:hover{
+    text-decoration: underline;
+}
