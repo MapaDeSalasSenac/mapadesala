@@ -4,6 +4,8 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+session_start();
+
 // Conexão com o banco
 require_once "conexao.php";
 
@@ -17,8 +19,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         die("Preencha todos os campos.");
     }
 
-    // Preparar consulta com MySQLi
-    $sql = "SELECT senha FROM usuarios WHERE email = ?";
+    // Buscar usuário pelo email
+    $sql = "SELECT id_usuario, senha FROM usuarios WHERE email = ?";
     $stmt = mysqli_prepare($conexao, $sql);
 
     if (!$stmt) {
@@ -32,11 +34,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $usuario = mysqli_fetch_assoc($resultado);
 
     if ($usuario) {
-        // Comparação de senha em texto puro
-        if ($senha === $usuario["senha"]) {
-            // Login OK → redireciona
+        // Verifica a senha criptografada
+        if (password_verify($senha, $usuario["senha"])) {
+
+            // Login OK → cria sessão
+            $_SESSION['id_usuario'] = $usuario['id_usuario'];
+            $_SESSION['email'] = $email;
+
             header("Location: ../Paginas/mapadesala.html");
             exit;
+
         } else {
             echo "Senha incorreta.";
         }
