@@ -1,6 +1,7 @@
 <?php
 // Frontend/api/mapa_salas.php
 require __DIR__ . "/../PHP/conexao.php";
+require __DIR__ . "/../PHP/FeriadosNacionais.php";
 
 header("Content-Type: application/json; charset=utf-8");
 
@@ -10,8 +11,8 @@ function bad($msg) {
   exit;
 }
 
-$start = $_GET["start"] ?? null; // YYYY-MM-DD
-$end   = $_GET["end"] ?? null;   // YYYY-MM-DD
+$start = $_GET["start"] ?? null;
+$end   = $_GET["end"] ?? null;
 
 if (!$start || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $start)) bad("start inválido (YYYY-MM-DD)");
 if (!$end   || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $end)) bad("end inválido (YYYY-MM-DD)");
@@ -25,12 +26,14 @@ while ($r = mysqli_fetch_assoc($q1)) {
   $salas[] = [
     "id" => (int)$r["id_sala"],
     "nome" => $r["nome_sala"],
-    "tipo" => "Sala", // se você tiver uma coluna tipo depois, troca aqui
+    "tipo" => "Sala",
   ];
 }
 
-// 2) AGENDAMENTOS
-// ✅ NÃO filtra por CURDATE() → mostra passado também
+// 2) FERIADOS (dinâmicos)
+$feriados = FeriadosNacionais::getFeriadosPeriodo($start, $end);
+
+// 3) AGENDAMENTOS
 $sql = "
   SELECT
     te.id_sala,
@@ -55,7 +58,6 @@ mysqli_stmt_bind_param($stmt, "ss", $start, $end);
 mysqli_stmt_execute($stmt);
 $res = mysqli_stmt_get_result($stmt);
 
-// Seu JS usa: matutino/vespertino/noturno
 $turnoMap = [
   "manha" => "matutino",
   "tarde" => "vespertino",
@@ -64,12 +66,11 @@ $turnoMap = [
 
 $agendamentos = [];
 while ($r = mysqli_fetch_assoc($res)) {
-  // atividade externa pode vir sem sala -> não ocupa sala, então não entra no mapa
   if (empty($r["id_sala"])) continue;
 
   $agendamentos[] = [
     "salaId" => (int)$r["id_sala"],
-    "data" => $r["data"], // YYYY-MM-DD
+    "data" => $r["data"],
     "turno" => $turnoMap[$r["turno"]] ?? $r["turno"],
     "professor" => $r["professor_nome"] ?? "",
     "curso" => $r["nome_turma"] ?? "",
@@ -80,6 +81,7 @@ while ($r = mysqli_fetch_assoc($res)) {
 echo json_encode([
   "ok" => true,
   "salas" => $salas,
-  "agendamentos" => $agendamentos
+  "agendamentos" => $agendamentos,
+  "feriados" => $feriados
 ], JSON_UNESCAPED_UNICODE);
 ?>

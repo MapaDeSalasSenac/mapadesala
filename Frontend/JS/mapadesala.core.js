@@ -29,8 +29,13 @@
     date: toISODate(new Date()),
     monthCursorISO: null,
     monthSelectedDate: null,
-    data: { salas: [], agendamentos: [] },
+    data: { 
+      salas: [], 
+      agendamentos: [],
+      feriados: []
+    },
     idx: new Map(),
+    feriadosIdx: new Map(),
 
     filtros: {
       status: "all",
@@ -88,14 +93,27 @@
     return `${salaId}|${dataISO}|${turno}`;
   }
 
-  function buildIndex(agendamentos) {
+  function buildIndex(agendamentos, feriados) {
     const map = new Map();
     for (const a of agendamentos) map.set(slotKey(a.salaId, a.data, a.turno), a);
-    return map;
+    
+    // Criar índice de feriados
+    const feriadosMap = new Map();
+    for (const f of feriados) feriadosMap.set(f.data, f);
+    
+    return { agendamentos: map, feriados: feriadosMap };
   }
 
   function getBooking(salaId, dataISO, turno) {
     return appState.idx.get(slotKey(salaId, dataISO, turno)) || null;
+  }
+
+  function isFeriado(dateISO) {
+    return appState.feriadosIdx.has(dateISO);
+  }
+
+  function getFeriadoInfo(dateISO) {
+    return appState.feriadosIdx.get(dateISO) || null;
   }
 
   // ======== agora marcador ========
@@ -110,8 +128,14 @@
 
   function isPastTurno(turnoId, baseDateISO) {
     const hojeISO = toISODate(new Date());
-    if (baseDateISO !== hojeISO) return false;
-
+    
+    // Se a data for futura, NÃO é passado
+    if (baseDateISO > hojeISO) return false;
+    
+    // Se for passado, sempre é passado
+    if (baseDateISO < hojeISO) return true;
+    
+    // Se for hoje, verifica o turno atual
     const nowId = getTurnoNowId(new Date());
     const order = ["matutino", "vespertino", "noturno"];
     return order.indexOf(turnoId) < order.indexOf(nowId);
@@ -119,7 +143,11 @@
 
   function isNowTurno(turnoId, baseDateISO) {
     const hojeISO = toISODate(new Date());
+    
+    // Se não for hoje, não é "agora"
     if (baseDateISO !== hojeISO) return false;
+    
+    // Se for hoje, verifica se é o turno atual
     return getTurnoNowId(new Date()) === turnoId;
   }
 
@@ -148,7 +176,7 @@
     botaoFiltro.classList.toggle("tem-filtro", !isFiltrosPadrao());
   }
 
-  // ======== modal filtros (voltou) ========
+  // ======== modal filtros ========
   let modalFiltrosEl = null;
 
   function criarModalFiltros() {
@@ -288,12 +316,22 @@
   async function refreshData() {
     const data = await window.MapaSalaAPI.ensureDataForState(appState, util);
     appState.data = data;
-    appState.idx = buildIndex(data.agendamentos);
+    const indices = buildIndex(data.agendamentos, data.feriados);
+    appState.idx = indices.agendamentos;
+    appState.feriadosIdx = indices.feriados;
   }
 
   // ======== render pipeline ========
   function getDeps() {
-    return { TURNOS, getBooking, isPastTurno, isNowTurno, norm };
+    return { 
+      TURNOS, 
+      getBooking, 
+      isPastTurno, 
+      isNowTurno, 
+      norm,
+      isFeriado,
+      getFeriadoInfo
+    };
   }
 
   function rerenderCurrent() {
@@ -389,7 +427,7 @@
       }
 
       const cell = e.target.closest(".celula-dia[data-date]");
-      if (!cell) return;
+      if (!cell || cell.classList.contains("feriado")) return;
 
       appState.monthSelectedDate = cell.dataset.date;
 

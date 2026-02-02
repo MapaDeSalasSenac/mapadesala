@@ -96,7 +96,20 @@
   // DAY
   // =======================
   function renderDay(state, util, deps) {
-    const { TURNOS, getBooking, isPastTurno, isNowTurno, norm } = deps;
+    const { TURNOS, getBooking, isPastTurno, isNowTurno, norm, isFeriado, getFeriadoInfo } = deps;
+    
+    const isTodayFeriado = isFeriado(state.date);
+    const feriadoInfo = getFeriadoInfo(state.date);
+    
+    // Se for feriado, mostrar mensagem especial
+    if (isTodayFeriado && feriadoInfo) {
+      return `
+        <div class="vazio-painel feriado-info">
+          <div style="font-size: 20px; margin-bottom: 10px;">🎉 ${escapeHTML(feriadoInfo.nome)}</div>
+          <div>Hoje é feriado - não há aulas programadas</div>
+        </div>
+      `;
+    }
 
     const cards = state.data.salas
       .map((s) => {
@@ -153,7 +166,7 @@
   // WEEK
   // =======================
   function renderWeek(state, util, deps) {
-    const { TURNOS, getBooking } = deps;
+    const { TURNOS, getBooking, isFeriado } = deps;
 
     const inicio = util.startOfWeekISO(state.date);
     const dias = Array.from({ length: 7 }, (_, i) => util.shiftISO(inicio, i));
@@ -168,13 +181,16 @@
             const dt = new Date(d + "T00:00:00");
             const diaNum = dt.getDate();
             const diaDow = dow[dt.getDay()];
+            
+            // Verificar se é feriado
+            const ehFeriado = isFeriado(d);
 
             const bars = TURNOS
               .filter((t) => state.filtros.turnos[t.id])
               .map((t) => {
                 const booking = getBooking(s.id, d, t.id);
 
-                const cls =
+                const cls = ehFeriado ? "apagado" :
                   state.filtros.status === "ocupada"
                     ? booking ? "ocupada" : "apagado"
                     : state.filtros.status === "livre"
@@ -183,15 +199,15 @@
 
                 if (cls !== "apagado") temMatch = true;
 
-                return `<span class="barra-turno-semana ${cls}" title="${escapeHTML(t.rotulo)}"></span>`;
+                return `<span class="barra-turno-semana ${cls}" title="${escapeHTML(t.rotulo)}${ehFeriado ? ' (Feriado)' : ''}"></span>`;
               })
               .join("");
 
             return `
-              <div class="card-dia-semana">
+              <div class="card-dia-semana ${ehFeriado ? 'dia-feriado' : ''}">
                 <div class="topo-dia-semana">
                   <span class="numero-dia-semana">${diaNum}</span>
-                  <span class="sigla-dia-semana">${diaDow}</span>
+                  <span class="sigla-dia-semana">${diaDow}${ehFeriado ? ' 🎉' : ''}</span>
                 </div>
                 <div class="barras-turnos-semana">${bars}</div>
               </div>
@@ -220,10 +236,23 @@
   }
 
   // =======================
-  // MONTH (✅ barra do mês com fill real)
+  // MONTH
   // =======================
   function renderPainelDia(state, deps, dateISO) {
-    const { TURNOS } = deps;
+    const { TURNOS, isFeriado, getFeriadoInfo } = deps;
+    
+    // Verificar se é feriado
+    if (isFeriado(dateISO)) {
+      const feriadoInfo = getFeriadoInfo(dateISO);
+      return `
+        <div class="data-painel">${formatDateBR(dateISO)}</div>
+        <div class="subtitulo-painel">🎉 Feriado</div>
+        <div class="vazio-painel feriado-info">
+          <div style="font-size: 18px; margin-bottom: 8px;">${escapeHTML(feriadoInfo?.nome || 'Feriado')}</div>
+          <div>Não há aulas programadas para este dia</div>
+        </div>
+      `;
+    }
 
     const salasById = new Map(state.data.salas.map((s) => [s.id, s]));
     const ag = state.data.agendamentos.filter((a) => a.data === dateISO);
@@ -263,6 +292,8 @@
   }
 
   function renderMonth(state, util, deps) {
+    const { TURNOS, isFeriado, getFeriadoInfo } = deps;
+    
     if (!state.monthCursorISO) state.monthCursorISO = util.startOfMonthISO(state.date);
     if (!state.monthSelectedDate) state.monthSelectedDate = state.date;
 
@@ -278,9 +309,24 @@
     const cells = gridDays.map((d) => {
       const fora = d.slice(0, 7) !== first.slice(0, 7) ? " fora-mes" : "";
       const sel = d === state.monthSelectedDate ? " selecionado" : "";
-
+      const feriado = isFeriado(d) ? " feriado" : "";
+      
       const dayNum = new Date(d + "T00:00:00").getDate();
-
+      
+      // Se for feriado, mostrar indicador de feriado
+      if (isFeriado(d)) {
+        const feriadoInfo = getFeriadoInfo(d);
+        return `
+          <button type="button" class="celula-dia${fora}${sel}${feriado}" data-date="${d}" disabled>
+            <div class="numero-dia">${dayNum}</div>
+            <div class="etiqueta-feriado" title="${feriadoInfo ? escapeHTML(feriadoInfo.nome) : 'Feriado'}">
+              🎉 ${feriadoInfo ? escapeHTML(feriadoInfo.nome.substring(0, 8)) : 'Feriado'}
+            </div>
+          </button>
+        `;
+      }
+      
+      // Cálculo normal para dias não feriados
       let ocupados = 0;
       for (const a of state.data.agendamentos) {
         if (a.data === d && state.filtros.turnos[a.turno]) ocupados++;
@@ -289,7 +335,6 @@
       const pct = totalSlotsPorDia ? Math.round((ocupados / totalSlotsPorDia) * 100) : 0;
       const isBusy = ocupados > 0 ? " tem-ocupacao" : "";
 
-      // ✅ aqui é o segredo: um fill com width real, independente do CSS antigo
       return `
         <button type="button" class="celula-dia${fora}${sel}${isBusy}" data-date="${d}">
           <div class="numero-dia">${dayNum}</div>

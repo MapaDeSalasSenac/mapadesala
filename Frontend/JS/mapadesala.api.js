@@ -8,6 +8,7 @@
     end: null,
     salas: [],
     agendamentos: [],
+    feriados: [],
   };
 
   function rangeCovers(cacheStart, cacheEnd, needStart, needEnd) {
@@ -28,6 +29,7 @@
     return {
       salas: Array.isArray(j.salas) ? j.salas : [],
       agendamentos: Array.isArray(j.agendamentos) ? j.agendamentos : [],
+      feriados: Array.isArray(j.feriados) ? j.feriados : [],
     };
   }
 
@@ -53,7 +55,11 @@
 
     // cache cobre o necessário
     if (rangeCovers(cache.start, cache.end, start, end)) {
-      return { salas: cache.salas, agendamentos: cache.agendamentos };
+      return { 
+        salas: cache.salas, 
+        agendamentos: cache.agendamentos,
+        feriados: cache.feriados
+      };
     }
 
     // buffer para evitar fetch toda hora
@@ -67,13 +73,20 @@
       end: endBuf,
       salas: data.salas,
       agendamentos: data.agendamentos,
+      feriados: data.feriados,
     };
 
     return data;
   }
 
   function clearCache() {
-    cache = { start: null, end: null, salas: [], agendamentos: [] };
+    cache = { 
+      start: null, 
+      end: null, 
+      salas: [], 
+      agendamentos: [],
+      feriados: []
+    };
   }
 
   window.MapaSalaAPI = {

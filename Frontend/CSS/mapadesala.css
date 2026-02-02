@@ -1093,3 +1093,53 @@ body{
 }
 
 
+/* Estilos para feriados */
+.celula-dia.feriado {
+  background: rgba(255, 215, 0, 0.1) !important;
+  border-color: rgba(255, 215, 0, 0.3) !important;
+  color: #b8860b !important;
+  cursor: not-allowed !important;
+}
+
+.celula-dia.feriado:hover {
+  background: rgba(255, 215, 0, 0.15) !important;
+}
+
+.etiqueta-feriado {
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  color: #b8860b !important;
+  background: rgba(255, 215, 0, 0.2) !important;
+  padding: 2px 4px !important;
+  border-radius: 4px !important;
+  margin-top: 2px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.feriado-info {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05)) !important;
+  border-color: rgba(255, 215, 0, 0.3) !important;
+  color: #b8860b !important;
+  text-align: center !important;
+  padding: 30px !important;
+}
+
+.card-dia-semana.dia-feriado {
+  background: rgba(255, 215, 0, 0.05) !important;
+  border-color: rgba(255, 215, 0, 0.2) !important;
+}
+
+/* No mobile, ajuste feriados */
+@media (max-width: 767px){
+  .etiqueta-feriado {
+    display: none !important;
+  }
+  
+  .celula-dia.feriado::after {
+    content: '🎉';
+    font-size: 10px;
+    margin-top: auto;
+  }
+}
