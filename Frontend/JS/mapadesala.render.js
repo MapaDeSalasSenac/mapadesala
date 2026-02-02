@@ -292,81 +292,168 @@
   }
 
   function renderMonth(state, util, deps) {
-    const { TURNOS, isFeriado, getFeriadoInfo } = deps;
+  const { TURNOS, isFeriado, getFeriadoInfo } = deps;
+  
+  if (!state.monthCursorISO) state.monthCursorISO = util.startOfMonthISO(state.date);
+  if (!state.monthSelectedDate) state.monthSelectedDate = state.date;
+
+  const first = state.monthCursorISO;
+  const { gridDays } = util.monthGrid(first);
+
+  const titulo = new Date(first + "T00:00:00").toLocaleString("pt-BR", { month: "long", year: "numeric" });
+
+  const head = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((x) => `<div>${x}</div>`).join("");
+
+  // Identificar salas físicas (não externas)
+  const salasFisicasIds = new Set();
+  state.data.salas.forEach(sala => {
+    if (!sala.nome.toLowerCase().includes('externo') && 
+        !sala.nome.toLowerCase().includes('externa') &&
+        !sala.tipo?.toLowerCase().includes('externo')) {
+      salasFisicasIds.add(sala.id);
+    }
+  });
+
+  const totalSalasFisicas = salasFisicasIds.size;
+
+  // Função auxiliar para contar ocupação POR TURNO
+  function contarOcupacaoPorTurno(dataISO) {
+    const ocupacaoPorTurno = {
+      matutino: 0,
+      vespertino: 0,
+      noturno: 0
+    };
     
-    if (!state.monthCursorISO) state.monthCursorISO = util.startOfMonthISO(state.date);
-    if (!state.monthSelectedDate) state.monthSelectedDate = state.date;
-
-    const first = state.monthCursorISO;
-    const { gridDays } = util.monthGrid(first);
-
-    const titulo = new Date(first + "T00:00:00").toLocaleString("pt-BR", { month: "long", year: "numeric" });
-
-    const head = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((x) => `<div>${x}</div>`).join("");
-
-    const totalSlotsPorDia = state.data.salas.length * (enabledTurnosCount(state) || 1);
-
-    const cells = gridDays.map((d) => {
-      const fora = d.slice(0, 7) !== first.slice(0, 7) ? " fora-mes" : "";
-      const sel = d === state.monthSelectedDate ? " selecionado" : "";
-      const feriado = isFeriado(d) ? " feriado" : "";
-      
-      const dayNum = new Date(d + "T00:00:00").getDate();
-      
-      // Se for feriado, mostrar indicador de feriado
-      if (isFeriado(d)) {
-        const feriadoInfo = getFeriadoInfo(d);
-        return `
-          <button type="button" class="celula-dia${fora}${sel}${feriado}" data-date="${d}" disabled>
-            <div class="numero-dia">${dayNum}</div>
-            <div class="etiqueta-feriado" title="${feriadoInfo ? escapeHTML(feriadoInfo.nome) : 'Feriado'}">
-              🎉 ${feriadoInfo ? escapeHTML(feriadoInfo.nome.substring(0, 8)) : 'Feriado'}
-            </div>
-          </button>
-        `;
+    const slotsOcupados = new Set();
+    
+    for (const a of state.data.agendamentos) {
+      if (a.data === dataISO && salasFisicasIds.has(a.salaId)) {
+        const slotKey = `${a.salaId}|${a.turno}`;
+        if (!slotsOcupados.has(slotKey)) {
+          slotsOcupados.add(slotKey);
+          ocupacaoPorTurno[a.turno]++;
+        }
       }
-      
-      // Cálculo normal para dias não feriados
-      let ocupados = 0;
-      for (const a of state.data.agendamentos) {
-        if (a.data === d && state.filtros.turnos[a.turno]) ocupados++;
-      }
+    }
+    
+    return ocupacaoPorTurno;
+  }
 
-      const pct = totalSlotsPorDia ? Math.round((ocupados / totalSlotsPorDia) * 100) : 0;
-      const isBusy = ocupados > 0 ? " tem-ocupacao" : "";
+  // Função para determinar cor do turno
+  function getCorTurno(ocupados, totalSalas) {
+    const pct = totalSalas ? (ocupados / totalSalas) * 100 : 0;
+    
+    if (pct >= 70) return "alta";      // Vermelho
+    if (pct >= 30) return "media";     // Amarelo
+    return "baixa";                    // Verde
+  }
 
+  const cells = gridDays.map((d) => {
+    const fora = d.slice(0, 7) !== first.slice(0, 7) ? " fora-mes" : "";
+    const sel = d === state.monthSelectedDate ? " selecionado" : "";
+    const feriado = isFeriado(d) ? " feriado" : "";
+    
+    const dayNum = new Date(d + "T00:00:00").getDate();
+    
+    if (isFeriado(d)) {
+      const feriadoInfo = getFeriadoInfo(d);
       return `
-        <button type="button" class="celula-dia${fora}${sel}${isBusy}" data-date="${d}">
+        <button type="button" class="celula-dia${fora}${sel}${feriado}" data-date="${d}" disabled>
           <div class="numero-dia">${dayNum}</div>
-
-          <div class="barra-ocupacao">
-            <div class="barra-ocupacao__fill" style="width:${pct}%;"></div>
+          <div class="etiqueta-feriado" title="${feriadoInfo ? escapeHTML(feriadoInfo.nome) : 'Feriado'}">
+            🎉 ${feriadoInfo ? escapeHTML(feriadoInfo.nome.substring(0, 8)) : 'Feriado'}
           </div>
-
-          <div class="texto-ocupacao">${ocupados}/${totalSlotsPorDia} ocupados</div>
         </button>
       `;
-    }).join("");
-
-    return `
-      <div class="mes-dividido">
-        <div class="mes">
-          <div class="navegacao-mes">
-            <button class="botao-navegacao-mes" type="button" data-act="month-prev">‹</button>
-            <div class="titulo-navegacao-mes">${escapeHTML(capitalize(titulo))}</div>
-            <button class="botao-navegacao-mes" type="button" data-act="month-next">›</button>
-          </div>
-
-          <div class="cabecalho-dias-mes">${head}</div>
-          <div class="grade-dias-mes">${cells}</div>
-        </div>
-
-        <aside class="painel-dia" data-role="painel-dia">
-          ${renderPainelDia(state, deps, state.monthSelectedDate)}
-        </aside>
+    }
+    
+    const ocupacao = contarOcupacaoPorTurno(d);
+    const corManha = getCorTurno(ocupacao.matutino, totalSalasFisicas);
+    const corTarde = getCorTurno(ocupacao.vespertino, totalSalasFisicas);
+    const corNoite = getCorTurno(ocupacao.noturno, totalSalasFisicas);
+    
+    // Calcular porcentagens
+    const pctManha = totalSalasFisicas ? Math.round((ocupacao.matutino / totalSalasFisicas) * 100) : 0;
+    const pctTarde = totalSalasFisicas ? Math.round((ocupacao.vespertino / totalSalasFisicas) * 100) : 0;
+    const pctNoite = totalSalasFisicas ? Math.round((ocupacao.noturno / totalSalasFisicas) * 100) : 0;
+    
+    const miniBarras = `
+      <div class="mini-barras-turnos">
+        <div class="mini-barra ${corManha}" data-turno="manha" data-ocupados="${ocupacao.matutino}" data-total="${totalSalasFisicas}" data-pct="${pctManha}"></div>
+        <div class="mini-barra ${corTarde}" data-turno="tarde" data-ocupados="${ocupacao.vespertino}" data-total="${totalSalasFisicas}" data-pct="${pctTarde}"></div>
+        <div class="mini-barra ${corNoite}" data-turno="noite" data-ocupados="${ocupacao.noturno}" data-total="${totalSalasFisicas}" data-pct="${pctNoite}"></div>
       </div>
     `;
-  }
+    
+    // Contadores numéricos abaixo das barras
+    const contadores = `
+      <div class="contadores-turnos">
+        <div class="contador-turno manha" data-cor="${corManha}">
+          <span class="contador-numero">${ocupacao.matutino}</span>
+          <span class="contador-porcento">${pctManha}%</span>
+        </div>
+        <div class="contador-turno tarde" data-cor="${corTarde}">
+          <span class="contador-numero">${ocupacao.vespertino}</span>
+          <span class="contador-porcento">${pctTarde}%</span>
+        </div>
+        <div class="contador-turno noite" data-cor="${corNoite}">
+          <span class="contador-numero">${ocupacao.noturno}</span>
+          <span class="contador-porcento">${pctNoite}%</span>
+        </div>
+      </div>
+    `;
+
+    return `
+      <button type="button" class="celula-dia${fora}${sel}" data-date="${d}" title="Manhã: ${ocupacao.matutino}/${totalSalasFisicas} (${pctManha}%) | Tarde: ${ocupacao.vespertino}/${totalSalasFisicas} (${pctTarde}%) | Noite: ${ocupacao.noturno}/${totalSalasFisicas} (${pctNoite}%)">
+        <div class="numero-dia">${dayNum}</div>
+        ${miniBarras}
+        ${contadores}
+      </button>
+    `;
+  }).join("");
+
+  const legenda = `
+    <div class="legenda-ocupacao">
+      <div class="item-legenda">
+        <span class="bolinha-legenda baixa"></span>
+        Baixa (0-29%)
+      </div>
+      <div class="item-legenda">
+        <span class="bolinha-legenda media"></span>
+        Média (30-69%)
+      </div>
+      <div class="item-legenda">
+        <span class="bolinha-legenda alta"></span>
+        Alta (70-100%)
+      </div>
+      <div class="item-legenda" style="margin-left: auto;">
+        <span style="font-size: 10px; color: #6b7280;">
+          ${totalSalasFisicas} salas físicas
+        </span>
+      </div>
+    </div>
+  `;
+
+  return `
+    <div class="mes-dividido">
+      <div class="mes">
+        <div class="navegacao-mes">
+          <button class="botao-navegacao-mes" type="button" data-act="month-prev">‹</button>
+          <div class="titulo-navegacao-mes">${escapeHTML(capitalize(titulo))}</div>
+          <button class="botao-navegacao-mes" type="button" data-act="month-next">›</button>
+        </div>
+
+        <div class="cabecalho-dias-mes">${head}</div>
+        <div class="grade-dias-mes">${cells}</div>
+        ${legenda}
+      </div>
+
+      <aside class="painel-dia" data-role="painel-dia">
+        ${renderPainelDia(state, deps, state.monthSelectedDate)}
+      </aside>
+    </div>
+  `;
+}
 
   function renderHTML(state, util, deps) {
     if (state.view === "day") return renderDay(state, util, deps);
