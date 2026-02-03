@@ -51,8 +51,8 @@ class FeriadosNacionais {
         $pascoaObj = new DateTime($pascoa);
         
         $moveis = [
-            ['offset' => -48, 'nome' => 'Carnaval (segunda)'],
-            ['offset' => -47, 'nome' => 'Carnaval (terça)'],
+            ['offset' => -48, 'nome' => 'Carnaval'],
+            ['offset' => -47, 'nome' => 'Carnaval'],
             ['offset' => -2,  'nome' => 'Sexta-feira Santa'],
             ['offset' => 0,   'nome' => 'Páscoa'],
             ['offset' => 60,  'nome' => 'Corpus Christi'],

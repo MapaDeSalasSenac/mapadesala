@@ -31,11 +31,7 @@
     font-weight: 600;
 }
 
-.container img{
-    width: 100px;
-}
-
-/* Card de login */
+/* Card */
 .boxLogin{
     width: 100%;
     max-width: 360px;
@@ -49,7 +45,7 @@
     gap: 25px;
 }
 
-/* Cabeçalho do card */
+/* Cabeçalho */
 .headerLogin h1{
     font-size: 30px;
     font-weight: bold;
@@ -67,24 +63,23 @@
     width: 90px;
 }
 
-/* Conjunto dos inputs */
+/* Conjunto */
 .conjunto{
     width: 100%;
 }
 
-/* Labels + inputs */
+/* Inputs */
 .boxContent{
     margin-bottom: 18px;
 }
 
 .boxContent h4{
     text-align: left;
-    font-size: 16   px;
+    font-size: 16px;
     margin-bottom: 6px;
     color: #333;
 }
 
-/* Inputs */
 .boxContent input{
     width: 100%;
     height: 36px;
@@ -98,7 +93,6 @@
 /* Botão */
 .boxContent button{
     width: 100%;
-    height: 38px;
     margin-top: 10px;
     background-color: #0b2874;
     color: white;
@@ -113,25 +107,8 @@
     background-color: #081f5c;
 }
 
-/* Texto de recuperar senha */
-.boxContent p{
-    margin-top: 10px;
-    font-size: 14px;
-    text-align: center;
-}
-
-.boxContent a{
-    color: #0b2874;
-    text-decoration: none;
-    font-weight: bold;
-}
-
-.boxContent a:hover{
-    text-decoration: underline;
-}
-
+/* Responsivo */
 @media (max-width: 480px){
-
     .boxLogin{
         padding: 30px 20px;
         border-radius: 12px;
@@ -145,10 +122,6 @@
         font-size: 14px;
     }
 
-    .headerLogin img{
-        width: 70px;
-    }
-
     .boxContent h4{
         font-size: 14px;
     }
@@ -157,9 +130,5 @@
     .boxContent button{
         height: 42px;
         font-size: 14px;
-    }
-
-    .boxContent p{
-        font-size: 13px;
     }
 }

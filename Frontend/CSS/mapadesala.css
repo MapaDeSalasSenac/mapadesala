@@ -1143,3 +1143,281 @@ body{
     margin-top: auto;
   }
 }
+
+
+/* Legenda da ocupação */
+.legenda-ocupacao {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.item-legenda {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #374151;
+}
+
+.bolinha-legenda {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.bolinha-legenda.baixa {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.bolinha-legenda.media {
+  background: linear-gradient(135deg, #eab308, #f59e0b);
+}
+
+.bolinha-legenda.alta {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+/* =====================================================
+   MINI-BARRAS DE TURNOS (MÊS)
+===================================================== */
+
+.mini-barras-turnos {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  height: 10px;
+  margin: 4px 0;
+}
+
+.mini-barra {
+  flex: 1;
+  height: 100%;
+  border-radius: 999px;
+  transition: all 0.2s ease;
+}
+
+/* CORES DAS MINI-BARRAS */
+
+/* BAIXA ocupação (0-29%) - VERDE */
+.mini-barra.baixa {
+  background: rgba(22,163,74,.25);
+  border-color: rgba(22,163,74,.20);
+  border: 1px solid var(--card-border);
+}
+
+/* MÉDIA ocupação (30-69%) - AMARELO */
+.mini-barra.media {
+  background:  rgba(235, 196, 80, 0.4);
+}
+
+/* ALTA ocupação (70-100%) - VERMELHO */
+.mini-barra.alta {
+  background: rgba(220,38,38,.25);
+  border-color: rgba(220,38,38,.20);
+  border: 1px solid rgba(0,0,0,.04);
+}
+
+/* Legenda das mini-barras */
+.legenda-mini {
+  width: auto;
+  height: 12px;
+  margin: 0;
+}
+
+.legenda-mini .mini-barra {
+  width: 10px;
+  border-radius: 2px;
+}
+
+/* Ajuste no texto de ocupação */
+.texto-ocupacao {
+  font-size: 10px;
+  font-weight: 900;
+  color: #6b7280;
+  text-align: center;
+  margin-top: 2px;
+}
+
+/* =====================================================
+   RESPONSIVIDADE
+===================================================== */
+
+@media (max-width: 767px) {
+  .mini-barras-turnos {
+    height: 6px;
+    gap: 1px;
+    margin: 2px 0;
+  }
+  
+  .texto-ocupacao {
+    font-size: 8px;
+  }
+  
+  .legenda-ocupacao {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .item-legenda {
+    font-size: 9px;
+  }
+}
+
+/* =====================================================
+   CONTADORES DE TURNOS NA CÉLULA
+===================================================== */
+
+.contadores-turnos {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 2px;
+}
+
+.contador-turno {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  flex: 1;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.contador-numero {
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.contador-porcento {
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+/* Cores dos contadores baseadas na ocupação */
+.contador-turno[data-cor="baixa"] .contador-numero,
+.contador-turno[data-cor="baixa"] .contador-porcento {
+  color: #16a34a; /* verde */
+}
+
+.contador-turno[data-cor="media"] .contador-numero,
+.contador-turno[data-cor="media"] .contador-porcento {
+  color: #f59e0b; /* amarelo */
+}
+
+.contador-turno[data-cor="alta"] .contador-numero,
+.contador-turno[data-cor="alta"] .contador-porcento {
+  color: #dc2626; /* vermelho */
+}
+
+/* =====================================================
+   AJUSTES DE LAYOUT COM CONTADORES
+===================================================== */
+
+.celula-dia {
+  min-height: 85px; /* Aumentado para caber contadores */
+  padding: 8px 6px; /* Ajuste no padding */
+  gap: 4px; /* Reduzido gap entre elementos */
+}
+
+.numero-dia {
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.mini-barras-turnos {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  height: 8px;
+  margin: 0;
+}
+
+/* =====================================================
+   RESPONSIVIDADE COM CONTADORES
+===================================================== */
+
+@media (max-width: 767px) {
+  .celula-dia {
+    min-height: 75px !important;
+    padding: 6px 4px !important;
+    gap: 3px !important;
+  }
+  
+  .numero-dia {
+    font-size: 12px !important;
+  }
+  
+  .mini-barras-turnos {
+    height: 6px;
+    gap: 1px;
+  }
+  
+  .contador-numero {
+    font-size: 9px !important;
+  }
+  
+  .contador-porcento {
+    font-size: 7px !important;
+  }
+  
+  .contadores-turnos {
+    margin-top: 1px;
+  }
+}
+
+/* =====================================================
+   VERSÃO ALTERNATIVA: CONTADORES COMPACTOS
+   (Se a versão acima ficar muito apertada)
+===================================================== */
+
+/* Para células muito pequenas, use esta versão compacta: */
+/*
+.contadores-turnos.compacto {
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 1px;
+}
+
+.contador-turno.compacto {
+  flex-direction: row;
+  justify-content: space-between;
+  font-size: 9px;
+  padding: 0 2px;
+}
+
+.contador-turno.compacto .contador-porcento {
+  font-size: 7px;
+}
+*/
+
+/* =====================================================
+   HOVER EFFECTS
+===================================================== */
+
+.celula-dia:hover .contador-numero {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+.celula-dia:hover .mini-barra.baixa {
+  box-shadow: 0 0 4px rgba(34, 197, 94, 0.6);
+}
+
+.celula-dia:hover .mini-barra.media {
+  box-shadow: 0 0 4px rgba(234, 179, 8, 0.6);
+}
+
+.celula-dia:hover .mini-barra.alta {
+  box-shadow: 0 0 4px rgba(239, 68, 68, 0.6);
+}
