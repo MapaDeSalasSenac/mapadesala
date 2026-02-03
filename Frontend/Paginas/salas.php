@@ -10,8 +10,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Salas - Senac MA</title>
-  <link rel="stylesheet" href="../CSS/salas.css" />
   <link rel="stylesheet" href="../CSS/padrao.css" />
+  <link rel="stylesheet" href="../CSS/salas.css" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="../JS/padrao.js" defer></script>
   <script src="../JS/salas.js" defer></script>
