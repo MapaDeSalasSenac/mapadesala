@@ -18,6 +18,7 @@
             
             <div class="conjunto">
                 <form action="/Frontend/PHP/cadastrar.php" method="POST">
+
                     <div class="boxContent">
                         <h4>E-mail</h4>
                         <input type="email" name="email" class="inputUser" required>
@@ -31,6 +32,10 @@
                     <div class="boxContent">
                         <h4>Confirmar Senha</h4>
                         <input type="password" name="Csenha" id="Csenha" class="inputUser" required>
+
+                        <!-- ERRO AQUI -->
+                        <p id="erro-cadastro" class="erro-login" style="display:none; color: #a31212; "></p>
+
                         <button type="submit">Cadastre-se</button>
                     </div>
 
@@ -38,6 +43,25 @@
             </div>
         </div>
     </div> 
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const erro = params.get("erro");
+        const erroBox = document.getElementById("erro-cadastro");
+
+        if (erro) {
+            erroBox.style.display = "block";
+
+            if (erro === "senhas") {
+                erroBox.innerText = "As senhas não coincidem.";
+            } else if (erro === "email") {
+                erroBox.innerText = "Este e-mail já está cadastrado.";
+            } else if (erro === "campos") {
+                erroBox.innerText = "Preencha todos os campos.";
+            } else {
+                erroBox.innerText = "Erro no sistema.";
+            }
+        }
+    </script>
 </body>
 </html>
-
