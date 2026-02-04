@@ -184,106 +184,135 @@ body {
   border-radius: 2px;
 }
 
-/* Modal fechado por padrão */
+/* ============================================================
+   MODAL PADRÃO SENAC (HERDADO DE TURMAS.CSS)
+   ============================================================ */
 .modal {
-  position: absolute;
+  position: fixed;
   inset: 0;
   display: none;
+  align-items: center;
+  justify-content: center;
   z-index: 9999;
-
-  font-size: 18px;
+  padding: 10px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.55); /* Fundo escuro fixado */
 }
 
-/* Modal aberto */
 .modal.is-open {
-  display: block;
+  display: flex;
 }
 
-/* Fundo escuro */
-.modal__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-}
-
-/* Caixa do modal */
 .modal__content {
   position: relative;
-  width: 500px;
-  margin: 15vh auto;
+  width: 100%;
+  max-width: 550px; 
+  max-height: 95vh;
   background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 20px 80px rgba(0,0,0,0.35);
-  overflow: hidden;
-  animation: modalIn 180ms ease-out;
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  overflow-y: auto;
+  animation: modalIn 0.3s ease-out;
+  border-top: 6px solid var(--laranja); /* Borda característica */
 }
 
 @keyframes modalIn {
-  from { transform: translateY(10px); opacity: 0; }
-  to   { transform: translateY(0); opacity: 1; }
-}
-
-.modal__header, .modal__footer {
-  padding: 14px 16px;
-  border-bottom: 1px solid #eee;
-}
-
-.modal__footer {
-  border-bottom: none;
-  border-top: 1px solid #eee;
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
-.modal__body {
-  display: flex;
-  justify-content: center;
-  padding: 16px;
-}
-
-.modal__close {
-  border: 0;
-  background: transparent;
-  font-size: 22px;
-  cursor: pointer;
-  line-height: 1;
-  margin-left: auto;
+  from { transform: scale(0.98); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
 }
 
 .modal__header {
+  padding: 15px 20px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--cinza-linha);
 }
 
-/* trava o scroll quando modal abrir */
-body.no-scroll {
-  overflow: hidden;
+.modal__header h2 {
+  color: var(--azul);
+  font-size: 18px;
+  font-weight: 700;
 }
 
-.modal__body form{
+.modal__close {
+  background: var(--cinza-bg);
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal__body {
+  padding: 20px;
+  display: block; /* Importante: remove o flex centralizado anterior */
+}
+
+/* SISTEMA DE COLUNAS */
+.form-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.form-group {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 30px;
-  justify-content: center;
-  align-items: center;
-
-  width: 430px;
 }
 
-.modal__body form .inputs{
-  width: 430px;
+.modal__body label {
+  font-weight: 600;
+  color: var(--azul);
+  font-size: 13px;
+  margin-bottom: 4px;
+  display: block;
 }
 
-.modal__body form .inputs label{
-  font-size: 20px;
-  margin-bottom: 20px;
-}
-
-
-.modal__body form .inputs input{
-  width: 420px;
+.modal__body input {
+  width: 100%;
   padding: 10px;
-  font-size: 18px;
+  border: 2px solid var(--cinza-linha);
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.modal__body input:focus {
+  border-color: var(--laranja);
+}
+
+/* BOTÕES DE AÇÃO */
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.actions button {
+  flex: 1;
+  padding: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-submit { 
+  background: var(--laranja); 
+  color: #fff; 
+}
+
+.btn-submit:hover {
+  background: #e65a20;
+}
+
+body.no-scroll { 
+  overflow: hidden; 
 }
