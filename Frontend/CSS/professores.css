@@ -194,96 +194,165 @@ body {
   font-size: 18px;
 }
 
-/* Modal aberto */
-.modal.is-open {
-  display: block;
-}
-
-/* Fundo escuro */
-.modal__backdrop {
-  position: absolute;
+/* ============================================================
+   MODAL - ESTILIZAÇÃO (SEGUINDO SALAS.CSS COM HOVERS)
+   ============================================================ */
+.modal {
+  position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.4); /* Fundo levemente escurecido */
+  width: 100%;
 }
 
-/* Caixa do modal */
+.modal.is-open {
+  display: flex;
+}
+
+.modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+}
+
 .modal__content {
   position: relative;
-  width: 500px;
-  margin: 15vh auto;
+  width: 100%;
+  max-width: 500px;
   background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 20px 80px rgba(0,0,0,0.35);
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   overflow: hidden;
-  animation: modalIn 180ms ease-out;
+  animation: modalIn 0.3s ease-out;
+  border-top: 6px solid var(--laranja);
 }
 
 @keyframes modalIn {
-  from { transform: translateY(10px); opacity: 0; }
-  to   { transform: translateY(0); opacity: 1; }
-}
-
-.modal__header, .modal__footer {
-  padding: 14px 16px;
-  border-bottom: 1px solid #eee;
-}
-
-.modal__footer {
-  border-bottom: none;
-  border-top: 1px solid #eee;
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
-.modal__body {
-  display: flex;
-  justify-content: center;
-  padding: 16px;
-}
-
-.modal__close {
-  border: 0;
-  background: transparent;
-  font-size: 22px;
-  cursor: pointer;
-  line-height: 1;
-  margin-left: auto;
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 .modal__header {
+  padding: 20px 25px;
+  background-color: #fff;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
 }
 
-/* trava o scroll quando modal abrir */
-body.no-scroll {
-  overflow: hidden;
+.modal__header h2 {
+  color: var(--azul);
+  font-size: 24px;
+  font-weight: 700;
 }
 
-.modal__body form{
+.modal__close {
+  background: var(--cinza-bg);
+  border: none;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--azul);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* HOVER: Botão Fechar */
+.modal__close:hover {
+  background: var(--laranja);
+  color: white;
+  transform: rotate(90deg) scale(1.1);
+}
+
+.modal__body {
+  padding: 30px 40px;
+}
+
+.modal__body form {
   display: flex;
   flex-direction: column;
-  gap: 30px;
-  justify-content: center;
-  align-items: center;
-
-  width: 430px;
+  gap: 20px;
 }
 
-.modal__body form .inputs{
-  width: 430px;
+.modal__body .inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.modal__body form .inputs label{
-  font-size: 20px;
-  margin-bottom: 20px;
+.modal__body label {
+  font-weight: 600;
+  color: var(--azul);
+  font-size: 14px;
 }
 
+.modal__body input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid var(--cinza-linha);
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
 
-.modal__body form .inputs input{
-  width: 420px;
-  padding: 10px;
+/* HOVER/FOCUS: Inputs */
+.modal__body input:hover {
+  border-color: #b0b0b0;
+}
+
+.modal__body input:focus {
+  outline: none;
+  border-color: var(--laranja);
+  box-shadow: 0 0 0 4px rgba(255, 107, 44, 0.1);
+}
+
+/* BOTÃO DE AÇÃO DENTRO DO MODAL */
+.buttonCriar {
+  background-color: var(--laranja);
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+}
+
+/* HOVER: Botão Criar */
+.buttonCriar:hover {
+  background-color: #e66e00;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(230, 110, 0, 0.3);
+}
+
+.buttonCriar:active {
+  transform: translateY(0);
+}
+
+.btn-delete {
+  position: absolute;
+  top: 15px;
+  right: 45px;
+  background: none;
+  border: none;
   font-size: 18px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.15s ease;
+}
+
+.btn-delete:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  color: #d9534f;
 }
