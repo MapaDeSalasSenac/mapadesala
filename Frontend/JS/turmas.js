@@ -127,10 +127,6 @@ document.addEventListener("keydown", (e) => {
       ${obsSala}
       ${avisoUltimo}
 
-      <div style="margin-top:10px; padding:10px; border:1px solid #ddd; border-radius:10px;">
-        <div style="font-weight:900; margin-bottom:6px;">📅 Datas (PROF = professor ocupado / SALA = sala ocupada)</div>
-        ${linhas}
-      </div>
     `;
 
     // Bloqueia submit se tiver conflito
@@ -221,4 +217,104 @@ document.addEventListener("keydown", (e) => {
     }
   });
 
+// ========== MODAL DE EDIÇÃO - VERSÃO SIMPLES SEM AJAX ==========
+const modalEditar = document.getElementById("modalEditar");
 
+function abrirModalEditar(btnElement) {
+    console.log("Abrindo modal com dados do botão:", btnElement);
+    
+    // Pega os dados dos atributos data-*
+    const dados = {
+        id: btnElement.getAttribute('data-id'),
+        nome: btnElement.getAttribute('data-nome'),
+        codigo: btnElement.getAttribute('data-codigo'),
+        carga: btnElement.getAttribute('data-carga'),
+        turno: btnElement.getAttribute('data-turno'),
+        professor: btnElement.getAttribute('data-professor'),
+        sala: btnElement.getAttribute('data-sala'),
+        atividade: btnElement.getAttribute('data-atividade')
+    };
+    
+    console.log("Dados capturados:", dados);
+    
+    // Preenche os campos do formulário
+    document.getElementById('edit_id_turma').value = dados.id;
+    document.getElementById('edit_nome_turma').value = dados.nome;
+    document.getElementById('edit_cod_turma').value = dados.codigo;
+    document.getElementById('edit_carga_horaria').value = dados.carga;
+    document.getElementById('edit_turno').value = dados.turno;
+    
+    // Professor (trata vazio)
+    document.getElementById('edit_id_professor').value = dados.professor || '';
+    
+    // Sala (trata vazio)
+    document.getElementById('edit_id_sala').value = dados.sala || '';
+    
+    // Atividade Externa (verifica se é "1")
+    const checkAtividade = document.getElementById('edit_atividade_externa');
+    if (checkAtividade) {
+        checkAtividade.checked = dados.atividade === '1';
+    }
+    
+    // Data de recálculo (padrão: hoje)
+    const hoje = new Date().toISOString().slice(0, 10);
+    const inputDataRecalculo = document.querySelector('#modalEditar input[name="data_recalculo"]');
+    if (inputDataRecalculo) {
+        inputDataRecalculo.value = hoje;
+    }
+    
+    // Limpa os checkboxes de dias (serão preenchidos quando o usuário escolher)
+    document.querySelectorAll('#modalEditar input[name="dias_semana[]"]').forEach(cb => {
+        cb.checked = false;
+    });
+    
+    // Abre o modal
+    modalEditar.classList.add("is-open");
+    modalEditar.setAttribute("aria-hidden", "false");
+    
+    // Foca no primeiro campo
+    const firstInput = modalEditar.querySelector('input, select');
+    if (firstInput) firstInput.focus();
+}
+
+function fecharModalEditar() {
+    modalEditar.classList.remove("is-open");
+    modalEditar.setAttribute("aria-hidden", "true");
+}
+
+// Evento para abrir modal ao clicar em editar
+document.addEventListener('click', function(e) {
+    // Verifica se clicou no botão de editar ou em seu ícone
+    const btnEdit = e.target.closest('.btn-edit');
+    if (btnEdit) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log("Clicou no botão editar:", btnEdit);
+        abrirModalEditar(btnEdit);
+    }
+});
+
+// Fechar modal editar ao clicar no X
+const closeBtn = modalEditar.querySelector('.modal__close');
+if (closeBtn) {
+    closeBtn.addEventListener('click', fecharModalEditar);
+}
+
+// Fechar modal editar ao clicar fora
+modalEditar.addEventListener('click', function(e) {
+    if (e.target === modalEditar) {
+        fecharModalEditar();
+    }
+});
+
+// Fechar modal editar com ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && modalEditar.classList.contains('is-open')) {
+        fecharModalEditar();
+    }
+});
+
+// DEBUG: Verifica se tudo está carregando
+console.log("Script turmas.js carregado");
+console.log("Modal editar existe?", !!modalEditar);
+console.log("Botões editar encontrados:", document.querySelectorAll('.btn-edit').length);

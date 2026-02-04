@@ -8,7 +8,7 @@
 
 /* VARIÁVEIS */
 :root {
-  --laranja: #ff7a00;
+  --laranja: #FF6B2C;
   --azul: #0b2c6d;
   --cinza-bg: #f2f2f2;
   --cinza-card: #eaeaea;
@@ -83,7 +83,7 @@ body {
 
 /* CONTEÚDO */
 .container {
-  margin-left: 200px;
+  margin-left: 240px;
   margin-top: 60px;
   padding: 40px;
   width: 100%;

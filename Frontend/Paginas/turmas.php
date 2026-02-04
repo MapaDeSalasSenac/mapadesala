@@ -127,7 +127,7 @@ $result = mysqli_query($conexao, $sql);
   <div class="sobreposicao-mobile"></div>
 
   <!-- CONTEÚDO -->
-  <main class="conteudo-principal">
+  <main class="conteudo-principal container">
     <section class="pagina-turmas">
       <div class="header-page">
         <h1>Turmas</h1>
@@ -216,90 +216,96 @@ $result = mysqli_query($conexao, $sql);
   </main>
 
   <!-- MODAL -->
-  <div class="modal" id="meuModal" aria-hidden="true">
-    <div class="modal__backdrop" data-close></div>
-
-    <div class="modal__content" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <header class="modal__header">
-        <h2 id="modalTitle">Criar Turma</h2>
-        <button class="modal__close" aria-label="Fechar" data-close>×</button>
-      </header>
-
-      <div class="modal__body">
-        <div class="grid">
-          <div class="box">
-            <form id="formTurma" action="../PHP/salvar_turma.php" method="POST">
-
-              <label>Sala</label>
-              <select name="id_sala" id="id_sala" required>
-                <option value="">Selecione...</option>
-                <?php foreach($salas as $s): ?>
-                  <option value="<?= (int)$s['id_sala'] ?>">
-                    <?= htmlspecialchars($s['nome_sala']) ?> (<?= (int)$s['capacidade'] ?>)
-                  </option>
-                <?php endforeach; ?>
-              </select>
-
-              <label>Professor</label>
-              <select name="id_professor" id="id_professor">
-                <option value="">(Sem professor)</option>
-                <?php foreach($professores as $p): ?>
-                  <option value="<?= (int)$p['id_professor'] ?>">
-                    <?= htmlspecialchars($p['nome']) ?> - <?= htmlspecialchars($p['formacao']) ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-
-              <label>Nome da turma</label>
-              <input type="text" name="nome_turma" id="nome_turma" required placeholder="Ex: Informática Básica">
-
-              <label>Código da turma</label>
-              <input type="text" name="cod_turma" id="cod_turma" required placeholder="Ex: INF-2026-01">
-
-              <label style="display:flex; gap:8px; align-items:center; margin-top:10px;">
-                <input type="checkbox" id="atividade_externa" name="atividade_externa" value="1">
-                Atividade externa (não reserva sala, mas ocupa o professor)
-              </label>
-
-              <label>Data de início</label>
-              <input type="date" name="data_inicio" id="data_inicio" required>
-
-              <label>Carga horária (em horas)</label>
-              <input type="number" name="carga_horaria" id="carga_horaria" min="1" required placeholder="Ex: 80">
-
-              <label>Dias da semana</label>
-              <div class="dias">
-                <label><input type="checkbox" name="dias_semana[]" value="seg"> Seg</label>
-                <label><input type="checkbox" name="dias_semana[]" value="ter"> Ter</label>
-                <label><input type="checkbox" name="dias_semana[]" value="qua"> Qua</label>
-                <label><input type="checkbox" name="dias_semana[]" value="qui"> Qui</label>
-                <label><input type="checkbox" name="dias_semana[]" value="sex"> Sex</label>
-              </div>
-
-              <label>Turno</label>
-              <select name="turno" id="turno" required>
-                <option value="">Selecione...</option>
-                <option value="manha">Manhã</option>
-                <option value="tarde">Tarde</option>
-                <option value="noite">Noite</option>
-              </select>
-
-              <div class="actions">
-                <button type="submit">✅ Cadastrar</button>
-                <button type="button" id="btnPreview">📅 Pré-visualizar</button>
-              </div>
-
-              <div id="preview" style="margin-top:12px;"></div>
-            </form>
-          </div>
+  <div class="modal" id="meuModal">
+    <div class="modal__content">
+        <div class="modal__header">
+            <h2>Adicionar Turma</h2>
+            <button class="modal__close" data-close>×</button>
         </div>
-      </div>
+        
+        <div class="modal__body">
+            <form id="formTurma" action="../PHP/salvar_turma.php" method="POST">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Sala</label>
+                        <select name="id_sala" id="id_sala" required>
+                            <option value="">Selecione...</option>
+                            <?php foreach($salas as $s): ?>
+                                <option value="<?= (int)$s['id_sala'] ?>">
+                                    <?= htmlspecialchars($s['nome_sala']) ?> (<?= (int)$s['capacidade'] ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Professor</label>
+                        <select name="id_professor" id="id_professor">
+                            <option value="">(Sem professor)</option>
+                            <?php foreach($professores as $p): ?>
+                                <option value="<?= (int)$p['id_professor'] ?>">
+                                    <?= htmlspecialchars($p['nome']) ?> - <?= htmlspecialchars($p['formacao']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
 
-      <footer class="modal__footer">
-        <button data-close>Fechar</button>
-        <button>Confirmar</button>
-      </footer>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome da turma</label>
+                        <input type="text" name="nome_turma" id="nome_turma" required placeholder="Ex: Informática Básica">
+                    </div>
+                    <div class="form-group">
+                        <label>Código da turma</label>
+                        <input type="text" name="cod_turma" id="cod_turma" required placeholder="Ex: INF-2026-01">
+                    </div>
+                </div>
+
+                <div class="atv-externa">
+                    <input type="checkbox" id="atividade_externa" name="atividade_externa" value="1">
+                    <label for="atividade_externa" style="display:inline; font-size: 12px; font-weight: 500;">
+                        Atividade externa (não reserva sala, mas ocupa o professor)
+                    </label>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Data de início</label>
+                        <input type="date" name="data_inicio" id="data_inicio" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Carga horária</label>
+                        <input type="number" name="carga_horaria" id="carga_horaria" min="1" required placeholder="Ex: 80">
+                    </div>
+                    <div class="form-group">
+                        <label>Turno</label>
+                        <select name="turno" id="turno" required>
+                            <option value="">Selecione...</option>
+                            <option value="manha">Manhã</option>
+                            <option value="tarde">Tarde</option>
+                            <option value="noite">Noite</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label>Dias da semana</label>
+                <div class="dias">
+                    <label><input type="checkbox" name="dias_semana[]" value="seg"> Seg</label>
+                    <label><input type="checkbox" name="dias_semana[]" value="ter"> Ter</label>
+                    <label><input type="checkbox" name="dias_semana[]" value="qua"> Qua</label>
+                    <label><input type="checkbox" name="dias_semana[]" value="qui"> Qui</label>
+                    <label><input type="checkbox" name="dias_semana[]" value="sex"> Sex</label>
+                </div>
+
+                <div class="actions">
+                    <button type="submit" class="btn-submit">✅ Cadastrar</button>
+                    <button type="button" id="btnPreview" class="btn-preview">📅 Pré-visualizar</button>
+                </div>
+
+                <div id="preview"></div>
+            </form>
+        </div>
     </div>
-  </div>
+</div>
 </body>
 </html>
