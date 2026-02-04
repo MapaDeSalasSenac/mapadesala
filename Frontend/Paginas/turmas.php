@@ -72,8 +72,8 @@ $result = mysqli_query($conexao, $sql);
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Turmas - Senac MA</title>
-  <link rel="stylesheet" href="../CSS/turmas.css" />
   <link rel="stylesheet" href="../CSS/padrao.css" />
+  <link rel="stylesheet" href="../CSS/turmas.css" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="../JS/padrao.js" defer></script>
   <script src="../JS/turmas.js" defer></script>
@@ -169,7 +169,16 @@ $result = mysqli_query($conexao, $sql);
             }
           ?>
             <div class="card" data-id="<?= (int)$t['id_turma'] ?>">
-              <button class="btn-edit" title="Editar Turma" data-id="<?= (int)$t['id_turma'] ?>">✏️</button>
+              <button class="btn-edit" title="Editar Turma" 
+                data-id="<?= (int)$t['id_turma'] ?>"
+                data-nome="<?= htmlspecialchars($t['nome_turma']) ?>"
+                data-codigo="<?= htmlspecialchars($t['cod_turma']) ?>"
+                data-carga="<?= (int)$t['carga_horaria'] ?>"
+                data-turno="<?= htmlspecialchars($t['turno']) ?>"
+                data-professor="<?= $t['id_professor'] ?? '' ?>"
+                data-sala="<?= $t['id_sala'] ?? '' ?>"
+                data-atividade="<?= (int)$t['atividade_externa'] ?>">
+                ✏️</button>
 
               <h3 class="card-h3"><?= htmlspecialchars($t['nome_turma']) ?></h3>
               <div class="line"></div>
@@ -307,6 +316,102 @@ $result = mysqli_query($conexao, $sql);
                 </div>
 
                 <div id="preview"></div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- MODAL DE EDIÇÃO -->
+<div class="modal" id="modalEditar">
+    <div class="modal__content">
+        <div class="modal__header">
+            <h2>Editar Turma</h2>
+            <button class="modal__close" data-close-editar>×</button>
+        </div>
+        
+        <div class="modal__body">
+            <form id="formEditarTurma" action="../PHP/atualizar_turma.php" method="POST">
+                <input type="hidden" name="id_turma" id="edit_id_turma">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Sala</label>
+                        <select name="id_sala" id="edit_id_sala">
+                            <option value="">Selecione...</option>
+                            <?php foreach($salas as $s): ?>
+                                <option value="<?= (int)$s['id_sala'] ?>">
+                                    <?= htmlspecialchars($s['nome_sala']) ?> (<?= (int)$s['capacidade'] ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Professor</label>
+                        <select name="id_professor" id="edit_id_professor">
+                            <option value="">(Sem professor)</option>
+                            <?php foreach($professores as $p): ?>
+                                <option value="<?= (int)$p['id_professor'] ?>">
+                                    <?= htmlspecialchars($p['nome']) ?> - <?= htmlspecialchars($p['formacao']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome da turma</label>
+                        <input type="text" name="nome_turma" id="edit_nome_turma" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Código da turma</label>
+                        <input type="text" name="cod_turma" id="edit_cod_turma" required>
+                    </div>
+                </div>
+
+                <div class="atv-externa">
+                    <input type="checkbox" id="edit_atividade_externa" name="atividade_externa" value="1">
+                    <label for="edit_atividade_externa" style="display:inline; font-size: 12px; font-weight: 500;">
+                        Atividade externa (não reserva sala, mas ocupa o professor)
+                    </label>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Data para recálculo</label>
+                        <input type="date" name="data_recalculo" id="edit_data_recalculo" required>
+                        <small style="color:#666;">Data a partir da qual os encontros serão recalculados</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Carga horária</label>
+                        <input type="number" name="carga_horaria" id="edit_carga_horaria" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Turno</label>
+                        <select name="turno" id="edit_turno" required>
+                            <option value="">Selecione...</option>
+                            <option value="manha">Manhã</option>
+                            <option value="tarde">Tarde</option>
+                            <option value="noite">Noite</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label>Dias da semana (mantenha selecionados para manter os encontros existentes)</label>
+                <div class="dias">
+                    <label><input type="checkbox" name="dias_semana[]" value="seg"> Seg</label>
+                    <label><input type="checkbox" name="dias_semana[]" value="ter"> Ter</label>
+                    <label><input type="checkbox" name="dias_semana[]" value="qua"> Qua</label>
+                    <label><input type="checkbox" name="dias_semana[]" value="qui"> Qui</label>
+                    <label><input type="checkbox" name="dias_semana[]" value="sex"> Sex</label>
+                </div>
+
+                <div class="actions">
+                    <button type="submit" class="btn-submit">💾 Salvar Alterações</button>
+                    <button type="button" id="btnPreviewEditar" class="btn-preview">📅 Pré-visualizar Recálculo</button>
+                    <button type="button" id="btnCancelarEditar" class="btn-cancel">❌ Cancelar</button>
+                </div>
+
+                <div id="previewEditar"></div>
             </form>
         </div>
     </div>
