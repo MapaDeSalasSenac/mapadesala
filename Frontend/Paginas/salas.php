@@ -1,7 +1,7 @@
 <?php
   require "../PHP/conexao.php";
 
-  $sql ="SELECT nome_sala, capacidade FROM salas";
+  $sql ="SELECT id_sala, nome_sala, capacidade FROM salas";
   $result = $conexao->query($sql);
 ?>
 <!DOCTYPE html>
@@ -50,7 +50,7 @@
   <div class="sobreposicao-mobile"></div>
 
   <!-- CONTEÚDO -->
-  <main class="conteudo-principal">
+  <main class="conteudo-principal container">
     <section class="pagina-salas">
       <div class="header-page">
         <h1>Salas</h1>
@@ -190,7 +190,7 @@
             
             <form action="../PHP/excluirSalas.php" method="POST" style="width: 100%; height: auto; gap: 10px;">
                 <input type="hidden" name="id_sala" id="delete_id">
-                <button type="submit" class="buttonCriar" style="background-color: #d9534f; width: 100%;">Sim, Excluir</button>
+                <button type="submit" class="buttonCriar btnApagar" style="width: 100%;">Sim, Excluir</button>
                 <button type="button" onclick="fecharModalExcluir()" style="background: none; border: none; color: var(--azul); cursor: pointer; font-weight: 600;">Cancelar</button>
             </form>
         </div>
