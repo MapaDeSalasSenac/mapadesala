@@ -86,9 +86,9 @@ $result = mysqli_query($conexao, $sql);
     .dias label{font-weight:500; margin-top:0; display:flex; align-items:center; gap:6px;}
     .actions{margin-top:12px; display:flex; gap:10px;}
     button{padding:10px 14px; border:0; border-radius:10px; cursor:pointer;}
-    /* button[type="submit"]{background:#2b7; color:#fff;} */
-    /* button[type="button"]{background:#eee;} */
-    #preview{margin-top:12px; white-space:pre-wrap; font-family:ui-monospace, monospace;} 
+    button[type="submit"]{background:#2b7; color:#fff;}
+    button[type="button"]{background:#eee;}
+    #preview{margin-top:12px; white-space:pre-wrap; font-family:ui-monospace, monospace;}
     .warn{color:#b00; font-weight:700;}
     .ok{color:#070; font-weight:700;}
   </style>
