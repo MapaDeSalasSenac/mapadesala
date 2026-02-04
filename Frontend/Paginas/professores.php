@@ -10,6 +10,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Professores - Senac MA</title>
+  <link rel="icon" type="image/x-icon" href="../IMG/favicon.png">
   <link rel="stylesheet" href="../CSS/professores.css" />
   <link rel="stylesheet" href="../CSS/padrao.css" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -43,6 +44,7 @@
         <li class="item-nav ativo"><a href="professores.php" class="conteudo-barra-lateral">Professores</a></li>
         <li class="item-nav"><a href="salas.php" class="conteudo-barra-lateral">Salas</a></li>
         <li class="item-nav"><a href="turmas.php" class="conteudo-barra-lateral">Turmas</a></li>
+        <li class="item-nav"><a href="creditos.html" class="conteudo-barra-lateral">Créditos</a></li>
       </ul>
     </nav>
 
