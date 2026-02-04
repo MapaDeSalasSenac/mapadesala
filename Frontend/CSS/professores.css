@@ -205,7 +205,6 @@ body {
   justify-content: center;
   z-index: 10000;
   padding: 20px;
-  background: rgba(0, 0, 0, 0.4); /* Fundo levemente escurecido */
   width: 100%;
 }
 

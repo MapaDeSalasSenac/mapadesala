@@ -91,6 +91,10 @@ $result = mysqli_query($conexao, $sql);
     #preview{margin-top:12px; white-space:pre-wrap; font-family:ui-monospace, monospace;}
     .warn{color:#b00; font-weight:700;}
     .ok{color:#070; font-weight:700;}
+    .modal {
+      width: 100%;
+      background:none;
+    }
   </style>
 </head>
 

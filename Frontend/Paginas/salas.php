@@ -15,6 +15,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="../JS/padrao.js" defer></script>
   <script src="../JS/salas.js" defer></script>
+  <style>
+    .modal {
+      width: 100%;
+      background:none;
+    }
+  </style>
 </head>
 
 <body>
