@@ -15,6 +15,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="../JS/padrao.js" defer></script>
   <script src="../JS/professores.js" defer></script>
+  <style>
+    .modal {
+      width: 100%;
+      background:none;
+    }
+  </style>
 </head>
 
 <body>
@@ -126,10 +132,6 @@
         </form>
       </div>
 
-      <footer class="modal__footer">
-        <button data-close>Fechar</button>
-        <button>Confirmar</button>
-      </footer>
     </div>
   </div>
 </body>
