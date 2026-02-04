@@ -50,7 +50,7 @@
   <div class="sobreposicao-mobile"></div>
 
   <!-- CONTEÚDO -->
-  <main class="conteudo-principal container">
+  <main class="conteudo-principal">
     <section class="pagina-professores">
       <!-- TÍTULO + AÇÕES -->
       <div class="header-page">
@@ -66,10 +66,7 @@
 
       <div class="cards" id="listaProfessores">
         <?php while ($row = $result->fetch_assoc()): ?>
-          <div class="card" data-id="<?= $row['id'] ?>" 
-            data-tel="<?= $row['telefone'] ?>" 
-            data-email="<?= $row['email'] ?>" 
-            data-cursos="<?= $row['cursos_complementares'] ?>">
+          <div class="card" data-id="12">
             <button class="btn-edit" title="Editar professor">✏️</button>
 
             <h3 class="professor-nome"><?= htmlspecialchars($row['nome']) ?></h3>
@@ -128,8 +125,12 @@
           <button type="submit" class="buttonCriar">Criar</button>
         </form>
       </div>
+
+      <footer class="modal__footer">
+        <button data-close>Fechar</button>
+        <button>Confirmar</button>
+      </footer>
     </div>
   </div>
-
 </body>
 </html>
