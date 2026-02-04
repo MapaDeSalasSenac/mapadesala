@@ -129,6 +129,15 @@
 .boxContent a:hover{
     text-decoration: underline;
 }
+.erro-login{
+    color: #a0070f;
+    background-color: #ffd2d2;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    text-align: center;
+}
 
 @media (max-width: 480px){
 

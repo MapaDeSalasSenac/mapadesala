@@ -16,7 +16,8 @@
             </div>         
 
             <div class="conjunto">
-                <form action="Frontend/PHP/login.php" method="POST">
+                <form action="/Frontend/PHP/login.php" method="POST">
+
                     <div class="boxContent">
                         <h4>E-mail</h4>
                         <input type="email" name="email" required>
@@ -25,14 +26,38 @@
                     <div class="boxContent">
                         <h4>Senha</h4>
                         <input type="password" name="senha" required>
+
+                        <!-- MENSAGEM DE ERRO AQUI -->
+                        <p id="erro-login" class="erro-login" style="display:none; color: #79060c;"></p>
+
                         <button type="submit">Entrar</button>
                         <p>Esqueceu o acesso? <a href="#">Clique aqui</a></p>
                         <p>Não tem conta? <a href="/Frontend/Paginas/cadastro.html">Crie uma</a></p>
                     </div>
+
                 </form>
             </div>
         </div>
     </div> 
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const erro = params.get("erro");
+        const erroBox = document.getElementById("erro-login");
+
+        if (erro) {
+            erroBox.style.display = "block";
+
+            if (erro === "senha") {
+                erroBox.innerText = "Senha ou e-mail incorretos.";
+            } else if (erro === "email") {
+                erroBox.innerText = "Usuário não cadastrado.";
+            } else if (erro === "campos") {
+                erroBox.innerText = "Preencha todos os campos.";
+            } else {
+                erroBox.innerText = "Erro no sistema.";
+            }
+        }
+    </script>
 </body>
 </html>
-
