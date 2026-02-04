@@ -1,423 +1,267 @@
+/* =====================================================
+   CRÉDITOS (SOMENTE ESTA TELA)
+   - Compatível com ../CSS/padrao.css
+===================================================== */
 
-:root {
-  --senac-orange:     #FF6B2C;
-  --senac-orange-light: #FF8851;
-  --senac-blue:       #003A70;
-  --senac-dark-blue:  #002850;
-  --bg:               #f8f9fa;
-  --card-bg:          #ffffff;
-  --text:             #212529;
-  --text-light:       #666666;
-  --shadow-sm:        0 2px 10px rgba(0,0,0,0.08);
-  --shadow-md:        0 6px 20px rgba(0,0,0,0.12);
-  --radius:           12px;
-  --transition:       0.3s ease;
+.pagina-creditos{
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  
+/* container geral */
+.creditos-grid{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-body {
-  font-family: 'Montserrat', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  line-height: 1.6;
+/* base dos cards */
+.creditos-card{
+  background: #fff;
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.05);
+  border: 1px solid rgba(255,107,44,.22);
 }
 
+.creditos-titulo{
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--azul);
+  margin-bottom: 10px;
+  position: relative;
+}
 
-.topbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 68px;
-  background: linear-gradient(135deg, var(--senac-orange), var(--senac-orange-light));
-  box-shadow: var(--shadow-md);
+.creditos-titulo::after{
+  content:'';
+  display:block;
+  margin-top: 8px;
+  width: 54px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--laranja);
+}
+
+.creditos-texto{
+  color: #374151;
+  font-weight: 600;
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+/* =====================================================
+   LINHA 1: Sobre + Equipe (2 colunas / mesma altura)
+===================================================== */
+.creditos-linha-topo{
+  display: flex;
+  gap: 16px;
+  align-items: stretch; /* mesma altura */
+}
+
+.creditos-linha-topo > .creditos-card{
+  flex: 1;            /* 50/50 */
+  display: flex;
+  flex-direction: column;
+}
+
+/* deixa o texto respirar e “encher” altura parecida */
+.creditos-linha-topo .creditos-texto{
+  flex: 0 0 auto;
+}
+
+/* =====================================================
+   EQUIPE: nomes com destaque REAL
+===================================================== */
+.nomes-equipe{
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* =====================================================
+   EQUIPE (NOMES + FUNÇÃO) — SOMENTE ISSO
+===================================================== */
+
+.nomes-equipe{
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Linha inteira: nome + badge */
+.nome-pill{
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1.5rem;
-  z-index: 1000;
+  gap: 12px;
+
+  padding: 13px 14px;
+  border-radius: 12px;
+
+  background: rgba(0, 58, 112, 0.045);
+  border: 1px solid rgba(0, 58, 112, 0.16);
+
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
 }
 
-.senac-logo {
-  font-size: clamp(1.6rem, 4.5vw, 1.9rem);
-  font-weight: 800;
-  color: white;
-  letter-spacing: 1px;
+.nome-pill:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(0,0,0,.09);
+  border-color: rgba(255,107,44,.30);
+  background: rgba(0, 58, 112, 0.06);
 }
 
-.hamburger {
-  display: none;
-  flex-direction: column;
-  gap: 5px;
-  cursor: pointer;
+/* Nome (bem forte) */
+.nome-pill .nome{
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--azul);
+  letter-spacing: .2px;
+  line-height: 1.15;
 }
 
-.hamburger span {
-  width: 28px;
-  height: 3px;
-  background: white;
-  border-radius: 2px;
-  transition: var(--transition);
-}
-
-.user-icon {
-  width: 48px;
-  height: 48px;
-  background: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--senac-orange);
-  font-size: 1.4rem;
-  font-weight: bold;
-  box-shadow: var(--shadow-sm);
-}
-
-
-.sidebar {
-  position: fixed;
-  top: 68px;
-  left: 0;
-  width: 240px;
-  height: calc(100vh - 68px);
-  background: linear-gradient(to bottom, var(--senac-blue), var(--senac-dark-blue));
-  color: white;
-  box-shadow: 3px 0 15px rgba(0,0,0,0.15);
-  transition: transform var(--transition);
-  z-index: 999;
-  display: flex;
-  flex-direction: column;
-}
-
-.sidebar-nav {
-  flex: 1;
-  padding: 1.5rem 0;
-}
-
-.nav-item {
-  padding: 1.1rem 1.8rem;
-  font-weight: 600;
-  font-size: 0.96rem;
-  cursor: pointer;
-  transition: var(--transition);
-  border-left: 4px solid transparent;
-}
-
-.nav-item:hover,
-.nav-item.active {
-  background: rgba(255,255,255,0.1);
-  border-left-color: var(--senac-orange);
-}
-
-.sidebar-footer {
-  padding: 1.4rem;
-  background: rgba(0,0,0,0.2);
-  border-top: 1px solid rgba(255,255,255,0.08);
-  font-size: 0.75rem;
-  color: rgba(255,255,255,0.8);
-  text-align: center;
-  line-height: 1.5;
-  margin-top: auto;
-}
-
-.sidebar-footer strong {
-  display: block;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-  color: rgba(255,255,255,0.95);
-}
-
-.sidebar-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.45);
-  z-index: 998;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.4s ease;
-  pointer-events: none;
-}
-
-
-.layout {
-  margin-top: 68px;
-  display: flex;
-}
-
-.content {
-  margin-left: 240px;
-  padding: clamp(2rem, 5vw, 3.5rem) clamp(2rem, 6vw, 4rem);
-  min-height: calc(100vh - 68px);
-  flex: 1;
-}
-
-.page-header {
-  margin-bottom: 2.5rem;
-}
-
-.page-title {
-  font-size: clamp(2.2rem, 5.5vw, 2.8rem);
-  font-weight: 800;
-  color: var(--senac-blue);
-  margin-bottom: 0.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 5px solid var(--senac-orange);
-  display: inline-block;
-}
-
-
-.page-subtitle {
-  font-size: 1rem;
-  color: var(--text-light);
-  margin-top: 1rem;
-  line-height: 1.8;
-  letter-spacing: 0.3px;
-}
-
-.page-subtitle2,
-.page-subtitle3,
-.page-subtitle4 {
-  font-size: 1rem;
-  color: var(--text-light);
-  margin-top: 1rem;
-  margin-bottom: 1.5rem;
-  line-height: 1.8;
-  letter-spacing: 0.3px;
-}
-
-.page-subtitle3 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--senac-blue);
-}
-
-.section-title {
-  font-size: clamp(1.4rem, 3.5vw, 1.6rem);
-  font-weight: 700;
-  color: var(--senac-blue);
-  margin: 2.5rem 0 1.5rem;
-  padding-left: 1rem;
-  border-left: 5px solid var(--senac-orange);
-}
-
-
-.team-section {
-  margin-bottom: 3rem;
-}
-
-.team-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 220px));
-  gap: clamp(0.8rem, 2vw, 1.2rem);
-  justify-content: flex-start;
-  max-width: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-.member-card {
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  padding: 1rem 0.9rem;
-  box-shadow: var(--shadow-sm);
-  transition: var(--transition);
-  border: 2px solid transparent;
-  text-align: center;
-}
-
-.member-card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--senac-orange);
-}
-
-.member-avatar {
-  width: 65px;
-  height: 65px;
-  margin: 0 auto 0.8rem;
-  background: linear-gradient(135deg, var(--senac-orange), var(--senac-orange-light));
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: white;
-  box-shadow: var(--shadow-sm);
-}
-
-.member-name {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--senac-blue);
-  margin-bottom: 0.3rem;
-}
-
-.member-role {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--senac-orange);
+/* Badge base (função) */
+.nome-pill .funcao{
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .7px;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  margin-bottom: 0.5rem;
+
+  padding: 7px 10px;
+  border-radius: 999px;
+
+  border: 1px solid rgba(0,0,0,.08);
+  background: rgba(0,0,0,.04);
+  color: #374151;
+
+  box-shadow: 0 6px 16px rgba(0,0,0,.06);
 }
 
-.member-description {
-  font-size: 0.75rem;
-  color: var(--text-light);
-  line-height: 1.5;
-  margin-bottom: 0.8rem;
-  min-height: 3em;
+/* Cores por função (com “carinha de badge”) */
+.nome-pill .funcao--front{
+  background: rgba(69, 255, 44, 0.14);
+  border-color: rgba(18, 88, 11, 0.3);
+  color: #27a002;
 }
 
-.member-contact {
+.nome-pill .funcao--back{
+  background: rgba(0,58,112,.14);
+  border-color: rgba(0,58,112,.30);
+  color: var(--azul);
+}
+
+.nome-pill .funcao--full{
+  background: rgba(17,24,39,.10);
+  border-color: rgba(17,24,39,.22);
+  color: #111827;
+}
+
+/* Mobile */
+@media (max-width: 767px){
+  .nome-pill{ padding: 12px; }
+  .nome-pill .nome{ font-size: 14px; }
+  .nome-pill .funcao{ font-size: 10px; padding: 6px 9px; }
+}
+
+
+/* =====================================================
+   LINHA 2: Professor + Tecnologias (horizontal)
+===================================================== */
+.creditos-linha-meio{
   display: flex;
-  justify-content: center;
-  gap: 0.8rem;
+  gap: 16px;
+  align-items: stretch;
 }
 
-.contact-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #f0f0f0;
-  color: var(--senac-blue);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  transition: var(--transition);
-  cursor: pointer;
+/* dois blocos lado a lado */
+.creditos-linha-meio > .creditos-card{
+  flex: 1;
 }
 
-.contact-icon:hover {
-  background: var(--senac-orange);
-  color: white;
-  transform: scale(1.12);
+/* professor precisa ser o foco dessa área (mas alunos ainda são o principal na equipe) */
+.creditos-destaque{
+  font-size: 16px;
+  font-weight: 900;
+  color: #111827;
+  margin-top: 6px;
 }
 
-
-.acknowledgments {
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  padding: 2.5rem;
-  box-shadow: var(--shadow-sm);
-  margin-top: 4rem;
-  text-align: center;
+/* tecnologias */
+.tech-stack{
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(0,0,0,.12);
 }
 
-.acknowledgments h3 {
-  font-size: 1.45rem;
-  color: var(--senac-blue);
-  margin-bottom: 1.2rem;
+.tech-titulo{
+  font-weight: 900;
+  color: #374151;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-bottom: 10px;
 }
 
-.acknowledgments p {
-  max-width: 760px;
-  margin: 0 auto;
-  color: var(--text-light);
-  font-size: 1rem;
-  line-height: 1.8;
-  letter-spacing: 0.3px;
-  text-align: center;
-}
-
-.tech-stack {
-  margin-top: 2.5rem;
-}
-
-.tech-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--senac-blue);
-  margin-bottom: 1rem;
-}
-
-.tech-badges {
+.tech-badges{
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.8rem;
+  gap: 10px;
 }
 
-.tech-badge {
-  padding: 0.55rem 1.2rem;
+.tech-badge{
+  padding: 8px 12px;
   border-radius: 999px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--senac-blue);
-  border: 1.5px solid var(--senac-orange);
-  background: rgba(255,107,44,0.05);
+  font-weight: 900;
+  font-size: 12px;
+  color: var(--azul);
+
+  border: 1px solid rgba(255,107,44,.35);
+  background: rgba(255,107,44,.06);
 }
 
-.version-info {
-  background: linear-gradient(135deg, var(--senac-blue), var(--senac-dark-blue));
-  color: white;
-  padding: 2rem;
-  border-radius: var(--radius);
-  margin-top: 6rem;
-  text-align: center;
-  box-shadow: var(--shadow-md);
+/* =====================================================
+   “Rodapé” do projeto (não parecer footer)
+===================================================== */
+.creditos-card.rodape-projeto{
+  text-align: left;
+  background: #fff;
+  border: 1px solid var(--borda);
 }
 
-.version-info p {
-  margin: 0.4rem 0;
-  font-size: 0.95rem;
-  line-height: 1.7;
-}
-
-.version-info p:first-child {
-  font-size: 1.15rem;
+.rodape-linha{
   font-weight: 700;
-  color: var(--senac-orange);
-  margin-bottom: 0.8rem;
+  color: #374151;
+  margin-top: 6px;
 }
 
-.version-info p:last-child {
-  margin-top: 0.8rem;
-  font-size: 0.85rem;
-  opacity: 0.85;
+.rodape-linha strong{
+  font-weight: 900;
+  color: var(--azul);
+  font-size: 16px;
 }
 
-
-
-@media (max-width: 1024px) {
-  .hamburger { display: flex; }
-  .sidebar   { transform: translateX(-100%); }
-  .sidebar.open { transform: translateX(0); }
-  .sidebar.open ~ .sidebar-overlay {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
+/* =====================================================
+   RESPONSIVO
+===================================================== */
+@media (max-width: 1024px){
+  .creditos-linha-topo,
+  .creditos-linha-meio{
+    flex-direction: column;
   }
-  .content   { margin-left: 0; }
 }
 
-@media (max-width: 768px) {
-  .topbar    { height: 64px; }
-  .sidebar   { top: 64px; height: calc(100vh - 64px); }
-  .layout    { margin-top: 64px; }
-  .content   { padding: 1.8rem 1.5rem; }
-  .page-title { font-size: clamp(1.9rem, 6vw, 2.4rem); }
-  .member-avatar { width: 70px; height: 70px; font-size: 2rem; }
-  .team-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 260px)); }
-}
-
-@media (max-width: 480px) {
-  .content   { padding: 1.5rem 1rem; }
-  .team-grid { 
-    gap: 1.2rem;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+@media (max-width: 767px){
+  .creditos-card{
+    padding: 16px;
   }
-  .member-card { padding: 1.3rem 1rem; }
-  .acknowledgments { padding: 2rem 1.5rem; }
-  .version-info { padding: 1.5rem 1rem; }
+
+  .nome-pill{
+    font-size: 14px;
+    padding: 11px 12px;
+  }
 }
