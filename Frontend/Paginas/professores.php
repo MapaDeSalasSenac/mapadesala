@@ -15,6 +15,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="../JS/padrao.js" defer></script>
   <script src="../JS/professores.js" defer></script>
+  <style>
+    .modal {
+      width: 100%;
+      background:none;
+    }
+  </style>
 </head>
 
 <body>
@@ -66,10 +72,7 @@
 
       <div class="cards" id="listaProfessores">
         <?php while ($row = $result->fetch_assoc()): ?>
-          <div class="card" data-id="<?= $row['id'] ?>" 
-            data-tel="<?= $row['telefone'] ?>" 
-            data-email="<?= $row['email'] ?>" 
-            data-cursos="<?= $row['cursos_complementares'] ?>">
+          <div class="card" data-id="12">
             <button class="btn-edit" title="Editar professor">✏️</button>
 
             <h3 class="professor-nome"><?= htmlspecialchars($row['nome']) ?></h3>
@@ -128,8 +131,8 @@
           <button type="submit" class="buttonCriar">Criar</button>
         </form>
       </div>
+
     </div>
   </div>
-
 </body>
 </html>

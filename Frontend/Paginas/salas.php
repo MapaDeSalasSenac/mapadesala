@@ -1,7 +1,7 @@
 <?php
   require "../PHP/conexao.php";
 
-  $sql ="SELECT id_sala, nome_sala, capacidade FROM salas";
+  $sql ="SELECT nome_sala, capacidade FROM salas";
   $result = $conexao->query($sql);
 ?>
 <!DOCTYPE html>
@@ -10,11 +10,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Salas - Senac MA</title>
-  <link rel="stylesheet" href="../CSS/padrao.css" />
   <link rel="stylesheet" href="../CSS/salas.css" />
+  <link rel="stylesheet" href="../CSS/padrao.css" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="../JS/padrao.js" defer></script>
   <script src="../JS/salas.js" defer></script>
+  <style>
+    .modal {
+      width: 100%;
+      background:none;
+    }
+  </style>
 </head>
 
 <body>
@@ -190,7 +196,7 @@
             
             <form action="../PHP/excluirSalas.php" method="POST" style="width: 100%; height: auto; gap: 10px;">
                 <input type="hidden" name="id_sala" id="delete_id">
-                <button type="submit" class="buttonCriar btnApagar" style="width: 100%;">Sim, Excluir</button>
+                <button type="submit" class="buttonCriar" style="background-color: #d9534f; width: 100%;">Sim, Excluir</button>
                 <button type="button" onclick="fecharModalExcluir()" style="background: none; border: none; color: var(--azul); cursor: pointer; font-weight: 600;">Cancelar</button>
             </form>
         </div>
