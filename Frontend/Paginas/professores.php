@@ -1,8 +1,41 @@
 <?php
   require "../PHP/conexao.php";
 
-  $sql ="SELECT nome, formacao, telefone, email, cursos_complementares FROM professores";
+  $sql = "
+    SELECT
+      p.id_professor,
+      p.nome,
+      p.formacao,
+      p.telefone,
+      p.email,
+      p.cursos_complementares,
+      GROUP_CONCAT(DISTINCT t.nome_turma ORDER BY t.nome_turma SEPARATOR ', ') AS turmas,
+      GROUP_CONCAT(DISTINCT t.turno ORDER BY t.turno SEPARATOR ', ') AS turnos
+    FROM professores p
+    LEFT JOIN turmas t ON t.id_professor = p.id_professor
+    GROUP BY
+      p.id_professor, p.nome, p.formacao, p.telefone, p.email, p.cursos_complementares
+  ";
+
   $result = $conexao->query($sql);
+
+  function turnoBonito($turnosCsv) {
+    if (!$turnosCsv) return "—";
+    $map = [
+      "manha" => "Manhã",
+      "tarde" => "Tarde",
+      "noite" => "Noite",
+    ];
+    $itens = array_map("trim", explode(",", $turnosCsv));
+    $itens = array_values(array_unique(array_filter($itens)));
+    $itens = array_map(fn($t) => $map[$t] ?? $t, $itens);
+    return $itens ? implode(", ", $itens) : "—";
+  }
+
+  function textoOuTraco($txt) {
+    $t = trim((string)$txt);
+    return $t === "" ? "—" : $t;
+  }
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -15,12 +48,11 @@
   <link rel="stylesheet" href="../CSS/padrao.css" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="../JS/padrao.js" defer></script>
-  <script src="../JS/professores.js" defer></script>
+  <script src="../JS/professores.js?v=<?= filemtime(__DIR__ . '/../JS/professores.js') ?>" defer></script>
+
+
   <style>
-    .modal {
-      width: 100%;
-      background:none;
-    }
+    .modal { width: 100%; background: none; }
   </style>
 </head>
 
@@ -66,6 +98,8 @@
 
         <div class="actions-bar">
           <button class="btn-icon btn-add" title="Adicionar professor" id="btnAbrir">+</button>
+
+          <!-- botão de filtro do padrão (já funciona via padrao.js) -->
           <button class="botao-icone botao-filtro" type="button" data-abrir-filtros title="Filtros">
             <img src="../IMG/filtro.png" alt="Filtro" style="width:22px;height:22px;">
           </button>
@@ -74,18 +108,44 @@
 
       <div class="cards" id="listaProfessores">
         <?php while ($row = $result->fetch_assoc()): ?>
-          <div class="card" data-id="12">
-            <button class="btn-edit" title="Editar professor">✏️</button>
+          <?php
+            $turmas = textoOuTraco($row["turmas"] ?? "");
+            $turnos = turnoBonito($row["turnos"] ?? "");
+            $formacao = textoOuTraco($row["formacao"] ?? "");
+            $compl = textoOuTraco($row["cursos_complementares"] ?? "");
+          ?>
+          <div class="card"
+            data-id="<?= (int)$row['id_professor'] ?>"
+            data-nome="<?= htmlspecialchars($row['nome']) ?>"
+            data-formacao="<?= htmlspecialchars($row['formacao']) ?>"
+            data-telefone="<?= htmlspecialchars($row['telefone']) ?>"
+            data-email="<?= htmlspecialchars($row['email']) ?>"
+            data-cursos="<?= htmlspecialchars($row['cursos_complementares'] ?? '') ?>"
+          >
 
-            <h3 class="professor-nome"><?= htmlspecialchars($row['nome']) ?></h3>
+            <button class="btn-edit" title="Editar professor">✏️</button>
+            <button type="button" class="btn-delete" title="Excluir professor"
+              data-id="<?= (int)$row['id_professor'] ?>"
+              data-nome="<?= htmlspecialchars($row['nome']) ?>"
+            >
+              🗑️
+            </button>
+
+            <h3 class="professor-nome"><?= htmlspecialchars($row["nome"] ?? "") ?></h3>
             <div class="line"></div>
 
             <div class="info">
-              <p class="turma-info"><?= htmlspecialchars($row['formacao']) ?></p>
-              <div class="line"></div>
-              <p class="turma-info">Turma</p>
-              <div class="line"></div>
-              <p class="turma-info">Turno</p>
+              <p class="linha-info"><strong>Formação:</strong> <?= htmlspecialchars($formacao) ?></p>
+
+              <p class="linha-info"><strong>Cursos complementares:</strong> <?= htmlspecialchars($compl) ?></p>
+
+              <p class="linha-info"><strong>Telefone:</strong> <?= htmlspecialchars(textoOuTraco($row["telefone"] ?? "")) ?></p>
+
+              <p class="linha-info"><strong>Email:</strong> <?= htmlspecialchars(textoOuTraco($row["email"] ?? "")) ?></p>
+
+              <p class="linha-info"><strong>Turma(s):</strong> <?= htmlspecialchars($turmas) ?></p>
+
+              <p class="linha-info"><strong>Turno(s):</strong> <?= htmlspecialchars($turnos) ?></p>
             </div>
           </div>
         <?php endwhile; ?>
@@ -105,6 +165,7 @@
 
       <div class="modal__body">
         <form action="../PHP/criarProfessor.php" method="POST">
+          <input type="hidden" name="idProfessor" id="idProfessor" value="">
           <div class="inputs">
             <label for="nomeProfessor">Nome do Professor</label>
             <input type="text" name="nomeProfessor" class="nome_prof" id="nomeProfessor" placeholder="Digite o nome" required>
@@ -133,8 +194,32 @@
           <button type="submit" class="buttonCriar">Criar</button>
         </form>
       </div>
-
     </div>
   </div>
+  <!-- MODAL EXCLUIR -->
+<div class="modal" id="modalExcluir" aria-hidden="true">
+  <div class="modal__backdrop" data-close-excluir></div>
+
+  <div class="modal__content modal__content--pequeno" role="dialog" aria-modal="true" aria-labelledby="modalExcluirTitle">
+    <header class="modal__header">
+      <h2 id="modalExcluirTitle" class="titulo-perigo">⚠️ Confirmar Exclusão</h2>
+      <button class="modal__close" type="button" aria-label="Fechar" data-close-excluir>×</button>
+    </header>
+
+    <div class="modal__body modal__body--center">
+      <p>Tem certeza que deseja excluir o professor <strong id="nomeProfessorExcluir" class="nome-destaque"></strong>?</p>
+      <p class="texto-aviso">Esta ação não pode ser desfeita.</p>
+
+      <form action="../PHP/excluirProfessor.php" method="POST" class="form-excluir">
+        <input type="hidden" name="id_professor" id="delete_prof_id">
+        <div class="acoes-excluir">
+          <button type="button" class="botao-secundario" data-close-excluir>Cancelar</button>
+          <button type="submit" class="botao-perigo">Excluir</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

@@ -405,7 +405,12 @@ body{
   grid-template-columns:1fr 1fr;
   gap:10px;
 }
-.modal{
+/* IMPORTANTE:
+   A classe `.modal` também é usada nos modais das páginas (ex: professores/salas).
+   Para não quebrar esses modais, o estilo abaixo é APENAS para o modal de filtros
+   (que vive dentro de `.sobreposicao-modal`).
+*/
+.sobreposicao-modal .modal{
   width:min(560px, 100%);
   background:#fff;
   border-radius:16px;
@@ -868,6 +873,46 @@ body.entrada-pagina--up .barra-lateral{
   }
 }
 
+/* =====================================================
+   MODAIS DAS PÁGINAS (GLOBAL)
+   - NÃO confundir com o modal do filtro (que usa `.sobreposicao-modal .modal`).
+   - Aqui miramos apenas wrappers que usam `aria-hidden` (meuModal, modalExcluir...).
+===================================================== */
+
+/* wrapper do modal (full-screen overlay) */
+.modal[aria-hidden]{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 4000; /* acima do header/sidebar */
+}
+.modal[aria-hidden].is-open{ display: flex; }
+
+/* backdrop com blur (cobre 100% do viewport) */
+.modal[aria-hidden] .modal__backdrop{
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(8,8,10,.45);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+/* conteúdo do modal fica acima do backdrop */
+.modal[aria-hidden] .modal__content{
+  position: relative;
+  z-index: 1;
+}
+
+/* quando modal abre, evita que `transform/filter` do body atrapalhe o backdrop */
+body.no-scroll{
+  transform: none !important;
+  filter: none !important;
+}
 
 
 /* =====================================================

@@ -255,3 +255,137 @@ to { transform: scale(1); opacity: 1; }}
   transform: scale(1.1);
   color: #d9534f;
 }
+/* =====================================================
+   INFO DO CARD (PROFESSORES)
+===================================================== */
+
+.pagina-professores .card{
+  position: relative;
+}
+
+.pagina-professores .professor-nome{
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--azul);
+}
+
+.pagina-professores .info{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.pagina-professores .linha-info{
+  margin: 0;
+  padding: 2px;
+  border-bottom: 1px solid rgba(0,0,0,.10);
+  background: rgba(255,255,255,.75);
+  backdrop-filter: blur(6px);
+}
+
+.pagina-professores .linha-info strong{
+  color: #111827;
+  font-weight: 800;
+}
+
+.pagina-professores .btn-edit{
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.12);
+  background: rgba(255,255,255,.85);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.pagina-professores .btn-edit:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(0,0,0,.10);
+}
+.pagina-professores .linha-info strong{
+  display:block;
+  margin-bottom: 6px;
+}
+/* botão delete ao lado do edit */
+.pagina-professores .btn-delete{
+  position: absolute;
+  top: 12px;
+  right: 58px; /* fica ao lado do lápis */
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.12);
+  background: rgba(255,255,255,.85);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.pagina-professores .btn-delete:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(0,0,0,.10);
+}
+
+/* modal excluir menor e central */
+#modalExcluir .modal__content--pequeno{
+  max-width: 420px;
+  height: auto;
+}
+
+#modalExcluir .modal__body--center{
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+#modalExcluir .titulo-perigo{
+  color: #d9534f;
+}
+
+#modalExcluir .nome-destaque{
+  color: var(--azul);
+}
+
+#modalExcluir .texto-aviso{
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+#modalExcluir .form-excluir{
+  width: 100%;
+}
+
+#modalExcluir .acoes-excluir{
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+#modalExcluir .botao-secundario{
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.12);
+  background: rgba(0,0,0,.03);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+#modalExcluir .botao-perigo{
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(217,83,79,.35);
+  background: #d9534f;
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
