@@ -13,8 +13,6 @@ function isDaySelected($mask, DateTime $dt) {
 }
 
 // POST
-$atividade_externa = !empty($_POST['atividade_externa']) ? 1 : 0;
-
 $id_sala = isset($_POST['id_sala']) && $_POST['id_sala'] !== "" ? (int)$_POST['id_sala'] : null;
 $id_professor = isset($_POST['id_professor']) && $_POST['id_professor'] !== "" ? (int)$_POST['id_professor'] : null;
 
@@ -37,12 +35,7 @@ if (!in_array($turno, ['manha','tarde','noite'], true)) die("Turno inválido.");
 if ($carga_horaria <= 0) die("Carga horária inválida.");
 if ($diasMask === 0) die("Selecione ao menos 1 dia da semana.");
 
-if (!$atividade_externa) {
-  if (!$id_sala || $id_sala <= 0) die("Sala inválida (atividade externa desmarcada).");
-} else {
-  $id_sala = null; // externa -> não reserva sala
-}
-
+if (!$id_sala || $id_sala <= 0) die("Sala inválida.");
 // regra horas
 $horasPorEncontro = ($turno === 'noite') ? 3 : 4;
 $totalEncontros = (int)ceil($carga_horaria / $horasPorEncontro);
@@ -55,26 +48,21 @@ try {
   // insere turma
   $sqlTurma = "
     INSERT INTO turmas
-      (id_sala, id_professor, nome_turma, cod_turma, data_inicio, carga_horaria, dias_semana, turno, atividade_externa)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (id_sala, id_professor, nome_turma, cod_turma, data_inicio, carga_horaria, dias_semana, turno)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   ";
   $stmt = mysqli_prepare($conexao, $sqlTurma);
-
-  // tipos: id_sala pode ser null -> bind como "i" ainda funciona, mas cuidado:
-  // vamos ajustar usando variável auxiliar
-  $id_sala_aux = $id_sala; // pode ser null
   mysqli_stmt_bind_param(
     $stmt,
-    "iisssiisi",
-    $id_sala_aux,
-    $id_professor,
+    "iisssiis",
+    $id_sala,
+$id_professor,
     $nome_turma,
     $cod_turma,
     $data_inicio,
     $carga_horaria,
     $diasMask,
-    $turno,
-    $atividade_externa
+    $turno
   );
   mysqli_stmt_execute($stmt);
   $id_turma = mysqli_insert_id($conexao);
@@ -101,7 +89,7 @@ try {
       $restante = $carga_horaria - ($encontrosCriados * $horasPorEncontro);
       $horasDoDia = min($horasPorEncontro, $restante);
 
-      $id_sala_insert = $id_sala; // null se externa
+      $id_sala_insert = $id_sala;
       mysqli_stmt_bind_param($stmtE, "iiissi", $id_turma, $id_sala_insert, $id_professor, $dataStr, $turno, $horasDoDia);
       mysqli_stmt_execute($stmtE); // aqui o UNIQUE impede choque de professor e/ou sala
 
@@ -113,9 +101,7 @@ try {
 
   mysqli_commit($conexao);
 
-  echo "<h2>✅ Turma cadastrada!</h2>";
-  echo "<p><b>Atividade externa:</b> " . ($atividade_externa ? "Sim" : "Não") . "</p>";
-  echo "<p><b>Carga horária:</b> {$carga_horaria}h</p>";
+  echo "<h2>✅ Turma cadastrada!</h2>";  echo "<p><b>Carga horária:</b> {$carga_horaria}h</p>";
   echo "<p><b>Encontros:</b> {$encontrosCriados}</p>";
   echo "<p><b>Último encontro:</b> {$ultimaData}</p>";
   echo "<a href='cadastrar_turma.php'>Cadastrar outra</a>";

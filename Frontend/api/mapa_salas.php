@@ -41,8 +41,7 @@ $sql = "
     te.turno,
     p.nome AS professor_nome,
     t.nome_turma,
-    t.cod_turma,
-    t.atividade_externa
+    t.cod_turma
   FROM turma_encontros te
   JOIN turmas t ON t.id_turma = te.id_turma
   JOIN professores p ON p.id_professor = te.id_professor

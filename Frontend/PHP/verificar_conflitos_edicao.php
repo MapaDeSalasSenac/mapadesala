@@ -17,10 +17,10 @@ $id_turma = isset($data["id_turma"]) ? (int)$data["id_turma"] : null;
 $id_sala = isset($data["id_sala"]) && $data["id_sala"] !== "" ? (int)$data["id_sala"] : null;
 $id_professor = isset($data["id_professor"]) && $data["id_professor"] !== "" ? (int)$data["id_professor"] : null;
 $turno = $data["turno"] ?? "";
-$atividade_externa = !empty($data["atividade_externa"]) ? 1 : 0;
 $datas = $data["datas"] ?? [];
 
 if (!$id_professor || $id_professor <= 0) bad("Professor inválido.");
+if (!$id_sala || $id_sala <= 0) bad("Sala inválida.");
 if (!in_array($turno, ["manha","tarde","noite"], true)) bad("Turno inválido.");
 if (!is_array($datas) || count($datas) === 0) bad("Lista de datas vazia.");
 
@@ -58,11 +58,7 @@ while ($row = mysqli_fetch_assoc($res)) {
     $conflitos_prof[] = $row["data"];
 }
 
-// 2) Conflitos da sala (somente se não for externa, ignorando esta turma)
-if (!$atividade_externa) {
-    if (!$id_sala || $id_sala <= 0) {
-        // Se não tem sala selecionada e não é externa, não há conflitos de sala
-    } else {
+// 2) Conflitos da sala (sempre)
         $sqlSala = "
             SELECT te.data, t.nome_turma
             FROM turma_encontros te
@@ -85,8 +81,6 @@ if (!$atividade_externa) {
         while ($row = mysqli_fetch_assoc($res2)) {
             $conflitos_sala[] = $row["data"];
         }
-    }
-}
 
 echo json_encode([
     "ok" => true,

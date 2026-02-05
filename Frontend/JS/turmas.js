@@ -70,11 +70,11 @@ document.addEventListener("keydown", (e) => {
     return { datas, horasPorEncontro, totalEncontros, horasUltimo };
   }
 
-  async function verificarConflitos({ id_sala, id_professor, turno, atividade_externa, datas }) {
+  async function verificarConflitos({ id_sala, id_professor, turno, datas }) {
     const res = await fetch('../PHP/verificar_conflitos.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id_sala, id_professor, turno, atividade_externa, datas })
+      body: JSON.stringify({ id_sala, id_professor, turno, datas })
     });
     const json = await res.json().catch(() => null);
     if (!res.ok || !json || json.ok === false) {
@@ -83,7 +83,7 @@ document.addEventListener("keydown", (e) => {
     return json;
   }
 
-  function renderPreview({ cargaHoraria, turno, atividade_externa, datas, horasPorEncontro, horasUltimo, conflitos_professor, conflitos_sala }) {
+  function renderPreview({ cargaHoraria, turno, datas, horasPorEncontro, horasUltimo, conflitos_professor, conflitos_sala }) {
     const setProf = new Set(conflitos_professor || []);
     const setSala = new Set(conflitos_sala || []);
 
@@ -104,10 +104,7 @@ document.addEventListener("keydown", (e) => {
     const badge = hasConflito
       ? `<div style="color:#b00;font-weight:900;">❌ Existem conflitos. Ajuste antes de salvar.</div>`
       : `<div style="color:#070;font-weight:900;">✅ Sem conflitos detectados.</div>`;
-
-    const obsSala = atividade_externa
-      ? `<div style="margin-top:6px;"><b>Sala:</b> (atividade externa) não reserva sala.</div>`
-      : `<div style="margin-top:6px;"><b>Sala:</b> será reservada.</div>`;
+    const obsSala = `<div style="margin-top:6px;"><b>Sala:</b> será reservada.</div>`;
 
     // lista com marcação por dia
     const linhas = datas.map(dt => {
@@ -139,8 +136,6 @@ document.addEventListener("keydown", (e) => {
     const cargaHoraria = parseInt(document.getElementById('carga_horaria')?.value || '0', 10);
     const turno = document.getElementById('turno')?.value;
     const diasSelecionados = getCheckedDays();
-
-    const atividade_externa = document.getElementById('atividade_externa')?.checked ? 1 : 0;
     const id_sala = document.getElementById('id_sala')?.value || "";
     const id_professor = document.getElementById('id_professor')?.value || "";
 
@@ -154,9 +149,9 @@ document.addEventListener("keydown", (e) => {
       return;
     }
 
-    if (!atividade_externa && !id_sala) {
+    if (!id_sala) {
       elPreview.innerHTML = `<span style="color:#b00;font-weight:800;">
-        Se NÃO for atividade externa, selecione uma sala.
+        Selecione uma sala.
       </span>`;
       return;
     }
@@ -167,14 +162,12 @@ document.addEventListener("keydown", (e) => {
         id_sala,
         id_professor,
         turno,
-        atividade_externa,
         datas: cal.datas
       });
 
       renderPreview({
         cargaHoraria,
         turno,
-        atividade_externa,
         datas: cal.datas,
         horasPorEncontro: cal.horasPorEncontro,
         horasUltimo: cal.horasUltimo,
@@ -200,7 +193,6 @@ document.addEventListener("keydown", (e) => {
       e.target.id === 'turno' ||
       e.target.id === 'id_sala' ||
       e.target.id === 'id_professor' ||
-      e.target.id === 'atividade_externa' ||
       e.target.name === 'dias_semana[]'
     ) {
       atualizarPreview();
@@ -231,9 +223,7 @@ function abrirModalEditar(btnElement) {
         carga: btnElement.getAttribute('data-carga'),
         turno: btnElement.getAttribute('data-turno'),
         professor: btnElement.getAttribute('data-professor'),
-        sala: btnElement.getAttribute('data-sala'),
-        atividade: btnElement.getAttribute('data-atividade')
-    };
+        sala: btnElement.getAttribute('data-sala'),    };
     
     console.log("Dados capturados:", dados);
     
@@ -249,12 +239,6 @@ function abrirModalEditar(btnElement) {
     
     // Sala (trata vazio)
     document.getElementById('edit_id_sala').value = dados.sala || '';
-    
-    // Atividade Externa (verifica se é "1")
-    const checkAtividade = document.getElementById('edit_atividade_externa');
-    if (checkAtividade) {
-        checkAtividade.checked = dados.atividade === '1';
-    }
     
     // Data de recálculo (padrão: hoje)
     const hoje = new Date().toISOString().slice(0, 10);

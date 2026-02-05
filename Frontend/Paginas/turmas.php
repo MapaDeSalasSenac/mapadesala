@@ -20,9 +20,7 @@ $sql = "
     t.id_turma,
     t.nome_turma,
     t.cod_turma,
-    t.turno,
-    t.atividade_externa,
-    t.carga_horaria,
+    t.turno,    t.carga_horaria,
 
     
     t.id_professor, 
@@ -164,8 +162,7 @@ $result = mysqli_query($conexao, $sql);
                 data-carga="<?= (int)$t['carga_horaria'] ?>"
                 data-turno="<?= htmlspecialchars($t['turno']) ?>"
                 data-professor="<?= $t['id_professor'] ?? '' ?>"
-                data-sala="<?= $t['id_sala'] ?? '' ?>"
-                data-atividade="<?= (int)$t['atividade_externa'] ?>">
+                data-sala="<?= $t['id_sala'] ?? '' ?>">
                 ✏️</button>
 
               <h3 class="card-h3"><?= htmlspecialchars($t['nome_turma']) ?></h3>
@@ -181,13 +178,7 @@ $result = mysqli_query($conexao, $sql);
                 <p class="content-info p_turno"><b>Turno:</b> <?= htmlspecialchars($t['turno']) ?></p>
                 <div class="line"></div>
 
-                <p class="content-info"><b>Sala:</b>
-                  <?php if ((int)$t['atividade_externa'] === 1): ?>
-                    Atividade externa
-                  <?php else: ?>
-                    <?= $t['sala_nome'] ? htmlspecialchars($t['sala_nome']) : "—" ?>
-                  <?php endif; ?>
-                </p>
+                <p class="content-info"><b>Sala:</b> <?= $t['sala_nome'] ? htmlspecialchars($t['sala_nome']) : "—" ?></p>
                 <div class="line"></div>
 
                 <p class="content-info"><b>Horas restantes:</b> <?= $horasRestantes ?>h</p>
@@ -261,15 +252,7 @@ $result = mysqli_query($conexao, $sql);
                         <input type="text" name="cod_turma" id="cod_turma" required placeholder="Ex: INF-2026-01">
                     </div>
                 </div>
-
-                <div class="atv-externa">
-                    <input type="checkbox" id="atividade_externa" name="atividade_externa" value="1">
-                    <label for="atividade_externa" style="display:inline; font-size: 12px; font-weight: 500;">
-                        Atividade externa (não reserva sala, mas ocupa o professor)
-                    </label>
-                </div>
-
-                <div class="form-row">
+<div class="form-row">
                     <div class="form-group">
                         <label>Data de início</label>
                         <input type="date" name="data_inicio" id="data_inicio" required>
@@ -355,15 +338,7 @@ $result = mysqli_query($conexao, $sql);
                         <input type="text" name="cod_turma" id="edit_cod_turma" required>
                     </div>
                 </div>
-
-                <div class="atv-externa">
-                    <input type="checkbox" id="edit_atividade_externa" name="atividade_externa" value="1">
-                    <label for="edit_atividade_externa" style="display:inline; font-size: 12px; font-weight: 500;">
-                        Atividade externa (não reserva sala, mas ocupa o professor)
-                    </label>
-                </div>
-
-                <div class="form-row">
+<div class="form-row">
                     <div class="form-group">
                         <label>Data para recálculo</label>
                         <input type="date" name="data_recalculo" id="edit_data_recalculo" required>

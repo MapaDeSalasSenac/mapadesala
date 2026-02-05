@@ -14,158 +14,37 @@ if (typeof modalEditarLoaded === 'undefined') {
         'sex': 16   // Sexta (1 << 4)
     };
 
-    // ========== FUNÇÕES AUXILIARES ==========
+    /// ========== FUNÇÕES AUXILIARES ==========
 
-    /**
-     * Converte bitmask para array de dias
-     * @param {number} mask - Máscara de bits dos dias
-     * @returns {string[]} Array com os dias ('seg', 'ter', etc)
-     */
-    function bitmaskParaDias(mask) {
-        const dias = [];
-        if (mask & 1) dias.push('seg');   // Segunda
-        if (mask & 2) dias.push('ter');   // Terça
-        if (mask & 4) dias.push('qua');   // Quarta
-        if (mask & 8) dias.push('qui');   // Quinta
-        if (mask & 16) dias.push('sex');  // Sexta
-        return dias;
-    }
+/**
+ * Converte bitmask (int) para array de dias: ['seg','ter',...]
+ * Ex: 5 (00101) => ['seg','qua']
+ */
+function bitmaskParaDias(mask) {
+  const dias = [];
+  if (mask & 1) dias.push('seg');   // 1
+  if (mask & 2) dias.push('ter');   // 2
+  if (mask & 4) dias.push('qua');   // 4
+  if (mask & 8) dias.push('qui');   // 8
+  if (mask & 16) dias.push('sex');  // 16
+  return dias;
+}
 
-    /**
-     * Formata nome do dia para exibição
-     * @param {string} dia - Código do dia ('seg', 'ter', etc)
-     * @returns {string} Nome formatado
-     */
-    function formatarNomeDia(dia) {
-        const map = {
-            'seg': 'Segunda-feira',
-            'ter': 'Terça-feira', 
-            'qua': 'Quarta-feira',
-            'qui': 'Quinta-feira',
-            'sex': 'Sexta-feira'
-        };
-        return map[dia] || dia;
-    }
+/**
+ * Formata o nome do dia pra exibição
+ */
+function formatarNomeDia(dia) {
+  const nomes = {
+    seg: 'Segunda-feira',
+    ter: 'Terça-feira',
+    qua: 'Quarta-feira',
+    qui: 'Quinta-feira',
+    sex: 'Sexta-feira'
+  };
+  return nomes[dia] || dia;
+}
 
-    // ========== FUNÇÕES PRINCIPAIS ==========
-
-    /**
-     * Abre o modal de edição com os dados da turma
-     * @param {HTMLElement} btnElement - Botão de edição clicado
-     */
-    async function abrirModalEditar(btnElement) {
-        console.log("🚀 Abrindo modal de edição");
-        
-        try {
-            // Pega os dados dos atributos data-*
-            const dados = {
-                id: btnElement.getAttribute('data-id'),
-                nome: btnElement.getAttribute('data-nome'),
-                codigo: btnElement.getAttribute('data-codigo'),
-                carga: btnElement.getAttribute('data-carga'),
-                turno: btnElement.getAttribute('data-turno'),
-                professor: btnElement.getAttribute('data-professor'),
-                sala: btnElement.getAttribute('data-sala'),
-                atividade: btnElement.getAttribute('data-atividade')
-            };
-            
-            turmaIdAtual = dados.id;
-            
-            console.log("📋 Dados capturados:", dados);
-            
-            // Preenche os campos do formulário
-            document.getElementById('edit_id_turma').value = dados.id;
-            document.getElementById('edit_nome_turma').value = dados.nome;
-            document.getElementById('edit_cod_turma').value = dados.codigo;
-            document.getElementById('edit_carga_horaria').value = dados.carga;
-            document.getElementById('edit_turno').value = dados.turno;
-            
-            // Professor (trata vazio)
-            const selectProfessor = document.getElementById('edit_id_professor');
-            if (selectProfessor) {
-                selectProfessor.value = dados.professor || '';
-            }
-            
-            // Sala (trata vazio)
-            const selectSala = document.getElementById('edit_id_sala');
-            if (selectSala) {
-                selectSala.value = dados.sala || '';
-            }
-            
-            // Atividade Externa
-            const checkAtividade = document.getElementById('edit_atividade_externa');
-            if (checkAtividade) {
-                checkAtividade.checked = dados.atividade === '1';
-                // Atualizar visibilidade da sala
-                atualizarVisibilidadeSalaEditar();
-            }
-            
-            // Data de recálculo (padrão: amanhã)
-            const amanha = new Date();
-            amanha.setDate(amanha.getDate() + 1);
-            const inputDataRecalculo = document.getElementById('edit_data_recalculo');
-            if (inputDataRecalculo) {
-                inputDataRecalculo.value = amanha.toISOString().slice(0, 10);
-            }
-            
-            // Carregar os dias atuais da turma
-            await carregarDiasTurma(dados.id);
-            
-            // Abre o modal
-            modalEditar = document.getElementById("modalEditar");
-            if (modalEditar) {
-                modalEditar.classList.add("is-open");
-                modalEditar.setAttribute("aria-hidden", "false");
-                
-                // Foca no primeiro campo
-                const firstInput = modalEditar.querySelector('input, select');
-                if (firstInput) {
-                    firstInput.focus();
-                    // Para selects, mostrar todas as opções ao focar
-                    if (firstInput.tagName === 'SELECT') {
-                        firstInput.size = firstInput.options.length;
-                        setTimeout(() => {
-                            firstInput.size = 0;
-                        }, 3000);
-                    }
-                }
-                
-                // Atualizar preview automaticamente
-                setTimeout(() => {
-                    atualizarPreviewEditar();
-                }, 500);
-            } else {
-                console.error("❌ Modal de edição não encontrado!");
-                alert("Erro: Modal não encontrado. Verifique o HTML.");
-            }
-            
-        } catch (error) {
-            console.error("❌ Erro ao abrir modal:", error);
-            alert("Erro ao abrir editor: " + error.message);
-        }
-    }
     
-    /**
-     * Atualiza visibilidade do campo sala baseado em atividade externa
-     */
-    function atualizarVisibilidadeSalaEditar() {
-        const checkAtividade = document.getElementById('edit_atividade_externa');
-        const selectSala = document.getElementById('edit_id_sala');
-        
-        if (checkAtividade && selectSala) {
-            if (checkAtividade.checked) {
-                selectSala.disabled = true;
-                selectSala.style.opacity = "0.5";
-                selectSala.style.backgroundColor = "#f0f0f0";
-                selectSala.title = "Atividade externa não usa sala";
-            } else {
-                selectSala.disabled = false;
-                selectSala.style.opacity = "1";
-                selectSala.style.backgroundColor = "";
-                selectSala.title = "";
-            }
-        }
-    }
 
     /**
      * Carrega os dias atuais da turma via AJAX
@@ -244,156 +123,36 @@ if (typeof modalEditarLoaded === 'undefined') {
      * Configura todos os event listeners
      */
     function configurarEventListeners() {
-        // Evento para abrir modal ao clicar no botão de editar
-        document.addEventListener('click', function(e) {
-            const btnEdit = e.target.closest('.btn-edit');
-            if (btnEdit) {
-                e.preventDefault();
-                e.stopPropagation();
-                abrirModalEditar(btnEdit);
-            }
-        });
-
-        // Fechar modal editar com o botão X
-        const closeBtnEditar = document.querySelector('[data-close-editar]');
-        if (closeBtnEditar) {
-            closeBtnEditar.addEventListener('click', fecharModalEditar);
-        }
-
-        // Botão cancelar
-        const btnCancelarEditar = document.getElementById('btnCancelarEditar');
-        if (btnCancelarEditar) {
-            btnCancelarEditar.addEventListener('click', fecharModalEditar);
-        }
-
-        // Fechar modal editar ao clicar fora
-        document.addEventListener('click', function(e) {
-            if (modalEditar && e.target === modalEditar) {
-                fecharModalEditar();
-            }
-        });
-
-        // Fechar modal editar com ESC
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && modalEditar && modalEditar.classList.contains('is-open')) {
-                fecharModalEditar();
-            }
-        });
-
-        // Atualizar visibilidade da sala quando atividade externa mudar
-        const checkAtividadeExterna = document.getElementById('edit_atividade_externa');
-        if (checkAtividadeExterna) {
-            checkAtividadeExterna.addEventListener('change', function() {
-                atualizarVisibilidadeSalaEditar();
-                // Pequeno delay para garantir que o DOM foi atualizado
-                setTimeout(atualizarPreviewEditar, 100);
-            });
-        }
-
-        // Botão preview no modal de edição
-        const btnPreviewEditar = document.getElementById('btnPreviewEditar');
-        if (btnPreviewEditar) {
-            btnPreviewEditar.addEventListener('click', function() {
-                console.log("🎯 Botão preview clicado");
-                atualizarPreviewEditar();
-            });
-        }
-
-        // Atualizar preview automaticamente ao mudar campos importantes
-        const camposParaMonitorar = [
-            'edit_data_recalculo',
-            'edit_carga_horaria', 
-            'edit_turno',
-            'edit_id_sala',
-            'edit_id_professor'
-        ];
-        
-        camposParaMonitorar.forEach(id => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.addEventListener('change', function() {
-                    console.log(`🔄 Campo ${id} alterado`);
-                    atualizarPreviewEditar();
-                });
-            }
-        });
-        
-        // Monitorar checkboxes de dias
-        const checkboxesDias = document.querySelectorAll('#modalEditar input[name="dias_semana[]"]');
-        checkboxesDias.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                console.log(`📅 Checkbox ${this.value} alterado`);
-                // Destaque visual
-                this.parentElement.style.fontWeight = this.checked ? 'bold' : 'normal';
-                this.parentElement.style.color = this.checked ? '#2b7' : '#333';
-                atualizarPreviewEditar();
-            });
-        });
-
-        // Monitorar mudanças em campos de texto com debounce
-        let timeoutPreview;
-        ['edit_nome_turma', 'edit_cod_turma'].forEach(id => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.addEventListener('input', function() {
-                    clearTimeout(timeoutPreview);
-                    timeoutPreview = setTimeout(() => {
-                        console.log(`✏️ Campo ${id} alterado (debounce)`);
-                        atualizarPreviewEditar();
-                    }, 800);
-                });
-            }
-        });
-
-        // Evento de submit do formulário
-        const formEditarTurma = document.getElementById('formEditarTurma');
-        if (formEditarTurma) {
-            formEditarTurma.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                console.log("📤 Submit do formulário acionado");
-                
-                // 1. Validação básica do formulário
-                if (!validarFormularioEditar()) {
-                    return false;
-                }
-                
-                // 2. Confirmar ação com o usuário
-                if (!confirm('⚠️ ATENÇÃO!\n\nEsta ação irá recriar todos os encontros futuros a partir da data de recálculo.\n\nDeseja continuar?')) {
-                    return false;
-                }
-                
-                // 3. Verificar conflitos
-                try {
-                    const podeContinuar = await verificarConflitosAntesDeEnviar();
-                    
-                    if (podeContinuar) {
-                        console.log("✅ Tudo validado, enviando formulário...");
-                        // Mostrar loading no botão
-                        const btnSubmit = this.querySelector('button[type="submit"]');
-                        if (btnSubmit) {
-                            const originalText = btnSubmit.innerHTML;
-                            btnSubmit.innerHTML = '⏳ Processando...';
-                            btnSubmit.disabled = true;
-                            
-                            // Restaurar após 2 segundos (caso o submit falhe)
-                            setTimeout(() => {
-                                btnSubmit.innerHTML = originalText;
-                                btnSubmit.disabled = false;
-                            }, 2000);
-                        }
-                        
-                        // Se tudo OK, enviar o formulário
-                        this.submit();
-                    } else {
-                        console.log("❌ Usuário cancelou ou validação falhou");
-                    }
-                } catch (error) {
-                    console.error("❌ Erro na validação:", error);
-                    alert("Erro na validação: " + error.message);
-                }
-            });
-        }
+  // Evento para abrir modal ao clicar no botão de editar
+  document.addEventListener('click', function(e) {
+    const btnEdit = e.target.closest('.btn-edit');
+    if (btnEdit) {
+      e.preventDefault();
+      e.stopPropagation();
+      abrirModalEditar(btnEdit);
     }
+  });
+
+  // Fechar modal editar com o botão X
+  const closeBtnEditar = document.querySelector('[data-close-editar]');
+  if (closeBtnEditar) closeBtnEditar.addEventListener('click', fecharModalEditar);
+
+  // Botão cancelar
+  const btnCancelarEditar = document.getElementById('btnCancelarEditar');
+  if (btnCancelarEditar) btnCancelarEditar.addEventListener('click', fecharModalEditar);
+
+  // Fechar modal editar ao clicar fora
+  document.addEventListener('click', function(e) {
+    if (modalEditar && e.target === modalEditar) fecharModalEditar();
+  });
+
+  // Fechar modal editar com ESC
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && modalEditar && modalEditar.classList.contains('is-open')) {
+      fecharModalEditar();
+    }
+  });
+} // ✅ ESSA CHAVE ESTAVA FALTANDO
 
     // ========== PRÉ-VISUALIZAÇÃO ==========
 
@@ -429,7 +188,6 @@ if (typeof modalEditarLoaded === 'undefined') {
                 data_recalculo: document.getElementById('edit_data_recalculo')?.value || '',
                 id_professor: document.getElementById('edit_id_professor')?.value || '',
                 id_sala: document.getElementById('edit_id_sala')?.value || '',
-                atividade_externa: document.getElementById('edit_atividade_externa')?.checked ? 1 : 0,
                 dias_semana: Array.from(document.querySelectorAll('#modalEditar input[name="dias_semana[]"]:checked')).map(cb => cb.value)
             };
             
@@ -454,8 +212,8 @@ if (typeof modalEditarLoaded === 'undefined') {
                 erros.push('Selecione pelo menos um dia da semana');
             }
             
-            if (!dados.atividade_externa && !dados.id_sala) {
-                erros.push('Para turmas não externas, selecione uma sala');
+            if (!dados.id_sala) {
+                erros.push('Selecione uma sala');
             }
             
             if (erros.length > 0) {
@@ -514,10 +272,7 @@ if (typeof modalEditarLoaded === 'undefined') {
                         </div>
                         <div style="padding:12px;background:#f0f8f0;border-radius:6px;">
                             <strong style="display:block;margin-bottom:8px;color:#2b7;">📍 LOCALIZAÇÃO</strong>
-                            <div>${dados.atividade_externa ? 
-                                '<span style="color:#070;">✅ Atividade Externa</span><br><small>(não usa sala)</small>' : 
-                                `🏫 Sala: ${dados.id_sala || 'Não selecionada'}`}
-                            </div>
+                            <div>🏫 Sala: ${dados.id_sala || "Não selecionada"}</div>
                         </div>
                     </div>
                     
@@ -685,8 +440,7 @@ if (typeof modalEditarLoaded === 'undefined') {
                     id_sala: dados.id_sala,
                     id_professor: dados.id_professor,
                     turno: dados.turno,
-                    atividade_externa: dados.atividade_externa,
-                    datas: datas
+datas: datas
                 })
             });
             
@@ -752,14 +506,11 @@ if (typeof modalEditarLoaded === 'undefined') {
         if (diasSelecionados === 0) {
             erros.push('Selecione pelo menos um dia da semana');
         }
-        
-        // Verificar atividade externa/sala
-        const atividadeExterna = document.getElementById('edit_atividade_externa')?.checked;
+        // Verificar sala
         const idSala = document.getElementById('edit_id_sala')?.value;
-        if (!atividadeExterna && !idSala) {
-            erros.push('Para turmas não externas, selecione uma sala');
+        if (!idSala) {
+            erros.push('Selecione uma sala');
         }
-        
         // Verificar data de recálculo válida
         const dataInput = document.getElementById('edit_data_recalculo');
         if (dataInput && dataInput.value) {
@@ -815,7 +566,6 @@ if (typeof modalEditarLoaded === 'undefined') {
                 id_sala: document.getElementById('edit_id_sala')?.value || '',
                 id_professor: document.getElementById('edit_id_professor')?.value || '',
                 turno: document.getElementById('edit_turno')?.value || '',
-                atividade_externa: document.getElementById('edit_atividade_externa')?.checked ? 1 : 0,
                 data_recalculo: document.getElementById('edit_data_recalculo')?.value || '',
                 carga_horaria: parseInt(document.getElementById('edit_carga_horaria')?.value || '0'),
                 dias_semana: Array.from(document.querySelectorAll('#modalEditar input[name="dias_semana[]"]:checked')).map(cb => cb.value)
@@ -873,12 +623,6 @@ if (typeof modalEditarLoaded === 'undefined') {
         
         // Configurar todos os event listeners
         configurarEventListeners();
-        
-        // Inicializar visibilidade da sala
-        setTimeout(() => {
-            atualizarVisibilidadeSalaEditar();
-        }, 100);
-        
         // Verificar se elementos necessários existem
         if (!document.getElementById('modalEditar')) {
             console.warn("⚠️ Modal de edição não encontrado no DOM");

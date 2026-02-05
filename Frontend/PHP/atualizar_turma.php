@@ -79,12 +79,6 @@ if (!in_array($turno, ['manha', 'tarde', 'noite'], true)) {
 // Campos opcionais
 $id_professor = (isset($_POST['id_professor']) && $_POST['id_professor'] !== '') ? (int)$_POST['id_professor'] : 0; // 0 => NULL
 $id_sala      = (isset($_POST['id_sala']) && $_POST['id_sala'] !== '') ? (int)$_POST['id_sala'] : 0; // 0 => NULL
-$atividade_externa = isset($_POST['atividade_externa']) ? 1 : 0;
-
-// Se for atividade externa, sala deve virar NULL
-if ($atividade_externa === 1) {
-    $id_sala = 0;
-}
 
 // Dias da semana (bitmask)
 $dias_semana = 0;
@@ -204,8 +198,8 @@ try {
                     }
                 }
 
-                // Conflito sala (se não for externa e tiver sala)
-                if ($atividade_externa === 0 && $id_sala > 0) {
+                // Conflito sala (se tiver sala)
+                if ($id_sala > 0) {
                     $sql_conflito_sala = "
                         SELECT DISTINCT te.data, t.nome_turma
                         FROM turma_encontros te
@@ -260,8 +254,7 @@ try {
         turno = ?,
         dias_semana = ?,
         id_professor = NULLIF(?, 0),
-        id_sala = NULLIF(?, 0),
-        atividade_externa = ?
+        id_sala = NULLIF(?, 0)
         WHERE id_turma = ?";
 
     $stmt_update = mysqli_prepare($conexao, $sql_update);
@@ -271,7 +264,7 @@ try {
 
     mysqli_stmt_bind_param(
         $stmt_update,
-        'ssisiiiii',
+        'ssisiiii',
         $nome_turma,
         $cod_turma,
         $carga_horaria,
@@ -279,7 +272,6 @@ try {
         $dias_semana,
         $id_professor,
         $id_sala,
-        $atividade_externa,
         $id_turma
     );
 
