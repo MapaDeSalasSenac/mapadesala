@@ -1,67 +1,76 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/Frontend/CSS/cadastro.css">
-    <title>Cadastro - MSS</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Cadastro - Senac MA</title>
+
+  <link rel="icon" type="image/x-icon" href="../IMG/favicon.png">
+
+  <!-- Fonte padrão do projeto -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- CSS (caminho relativo correto) -->
+  <link rel="stylesheet" href="../CSS/cadastro.css">
 </head>
+
 <body>
-    <div class="container">
-        <div class="boxLogin">
+  <div class="container">
+    <div class="boxLogin">
 
-            <div class="headerLogin">
-                <img src="/Frontend/IMG/Senac_logo.svg.png" alt="">
-                <h1>Bem vindo</h1>
-                <h3>Sistema de gestão SENAC</h3>    
-            </div>         
-            
-            <div class="conjunto">
-                <form action="/Frontend/PHP/cadastrar.php" method="POST">
+      <div class="headerLogin">
+        <img src="../IMG/Senac_logo.svg.png" alt="Senac">
+        <h1>Bem vindo</h1>
+        <h3>Sistema de gestão SENAC</h3>
+      </div>
 
-                    <div class="boxContent">
-                        <h4>E-mail</h4>
-                        <input type="email" name="email" class="inputUser" required>
-                    </div>
+      <div class="conjunto">
+        <form action="../PHP/cadastrar.php" method="POST">
 
-                    <div class="boxContent">
-                        <h4>Senha</h4>
-                        <input type="password" name="senha" id="senha" class="inputUser" required>
-                    </div>
+          <div class="boxContent">
+            <h4>E-mail</h4>
+            <input type="email" name="email" class="inputUser" required>
+          </div>
 
-                    <div class="boxContent">
-                        <h4>Confirmar Senha</h4>
-                        <input type="password" name="Csenha" id="Csenha" class="inputUser" required>
+          <div class="boxContent">
+            <h4>Senha</h4>
+            <input type="password" name="senha" id="senha" class="inputUser" required>
+          </div>
 
-                        <!-- ERRO AQUI -->
-                        <p id="erro-cadastro" class="erro-login" style="display:none; color: #a31212; "></p>
+          <div class="boxContent">
+            <h4>Confirmar Senha</h4>
+            <input type="password" name="Csenha" id="Csenha" class="inputUser" required>
 
-                        <button type="submit">Cadastre-se</button>
-                    </div>
+            <!-- erro (sem inline style) -->
+            <p id="erro-cadastro" class="erro-login" hidden></p>
 
-                </form>
-            </div>
-        </div>
-    </div> 
+            <button type="submit">Cadastre-se</button>
+          </div>
 
-    <script>
-        const params = new URLSearchParams(window.location.search);
-        const erro = params.get("erro");
-        const erroBox = document.getElementById("erro-cadastro");
+        </form>
+      </div>
+    </div>
+  </div>
 
-        if (erro) {
-            erroBox.style.display = "block";
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const erro = params.get("erro");
+    const erroBox = document.getElementById("erro-cadastro");
 
-            if (erro === "senhas") {
-                erroBox.innerText = "As senhas não coincidem.";
-            } else if (erro === "email") {
-                erroBox.innerText = "Este e-mail já está cadastrado.";
-            } else if (erro === "campos") {
-                erroBox.innerText = "Preencha todos os campos.";
-            } else {
-                erroBox.innerText = "Erro no sistema.";
-            }
-        }
-    </script>
+    if (erro) {
+      erroBox.hidden = false;
+
+      if (erro === "senhas") {
+        erroBox.innerText = "As senhas não coincidem.";
+      } else if (erro === "email") {
+        erroBox.innerText = "Este e-mail já está cadastrado.";
+      } else if (erro === "campos") {
+        erroBox.innerText = "Preencha todos os campos.";
+      } else {
+        erroBox.innerText = "Erro no sistema.";
+      }
+    }
+  </script>
 </body>
 </html>

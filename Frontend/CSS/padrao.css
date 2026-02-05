@@ -873,6 +873,17 @@ body.entrada-pagina--up .barra-lateral{
   }
 }
 
+.menu-usuario__cabecalho{
+  padding: 12px;
+  border-bottom: 1px dashed rgba(0,0,0,.14);
+}
+
+.menu-usuario__papel{
+  font-weight: 900;
+  color: var(--azul);
+}
+
+
 /* =====================================================
    MODAIS DAS PÁGINAS (GLOBAL)
    - NÃO confundir com o modal do filtro (que usa `.sobreposicao-modal .modal`).

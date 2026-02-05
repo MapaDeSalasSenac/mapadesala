@@ -69,11 +69,40 @@
   // =========================
   let menuUsuarioEl = null;
 
+  // Retorna "Administrador" ou "Usuário".
+  // 1) tenta via <body data-papel="admin|user"> (se a página for PHP e setar isso)
+  // 2) tenta via endpoint de sessão (para páginas .html também)
+  async function obterPapelUsuario() {
+    const papelBody = (document.body?.dataset?.papel || "").toLowerCase();
+    if (papelBody === "admin") return "Administrador";
+    if (papelBody === "user") return "Usuário";
+
+    try {
+      const resp = await fetch("../PHP/session_info.php", { credentials: "same-origin" });
+      if (!resp.ok) return "Usuário";
+      const data = await resp.json();
+      return data?.papel === "admin" ? "Administrador" : "Usuário";
+    } catch {
+      return "Usuário";
+    }
+  }
+
   function criarMenuUsuario() {
     const pop = document.createElement("div");
     pop.className = "menu-usuario";
-    pop.innerHTML = `<button type="button" data-acao="sair">Sair</button>`;
+    pop.innerHTML = `
+      <div class="menu-usuario__cabecalho">
+        <div class="menu-usuario__papel" id="menuUsuarioPapel">Usuário</div>
+      </div>
+      <button type="button" class="menu-usuario__sair" data-acao="sair">Sair</button>
+    `;
     document.body.appendChild(pop);
+
+    // Atualiza papel (async) sem travar UI
+    obterPapelUsuario().then((txt) => {
+      const el = pop.querySelector("#menuUsuarioPapel");
+      if (el) el.textContent = txt;
+    });
 
     pop.addEventListener("click", (e) => {
       const acao = e.target.closest("[data-acao]")?.dataset.acao;
@@ -104,9 +133,9 @@
   }
 
   function fazerLogout() {
-    // evento padrão do app + reload (você troca depois por redirect/autenticação)
+    // evento padrão do app + logout server-side + redirect pro index
     window.dispatchEvent(new CustomEvent("app:logout"));
-    location.reload();
+    window.location.href = "../PHP/logout.php";
   }
 
   botaoUsuario?.addEventListener("click", (e) => {
@@ -579,18 +608,3 @@
   // (no mapa, o core já atualiza o relógio/filtros)
 
 })();
-  // =========================
-  // ESC fecha: sidebar + modal de filtros + menu usuário
-  // =========================
-  document.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape") return;
-    setMenuLateralAberto(false);
-    fecharModalFiltros();
-
-    if (menuUsuarioEl?.classList.contains("aberto")) {
-      menuUsuarioEl.classList.remove("aberto");
-      botaoUsuario?.setAttribute("aria-expanded", "false");
-    }
-  });
-
-
