@@ -1,7 +1,8 @@
-/* =====================================================
-   CRÉDITOS (SOMENTE ESTA TELA)
-   - Compatível com ../CSS/padrao.css
-===================================================== */
+/* deixa o conteúdo “centralizado” como no mapa */
+.conteudo-principal > section{
+  max-width: 1400px;
+  margin: 0 auto;
+}
 
 .pagina-creditos{
   max-width: 1200px;

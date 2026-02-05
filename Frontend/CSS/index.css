@@ -1,31 +1,9 @@
-*{
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-.container{
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 30px;
-    padding: 20px;
-    color: white;
-    text-align: center;
-    background-image: linear-gradient(
+.container{min-height: 100vh;display: flex;flex-direction: column;align-items: center;justify-content: center;gap: 30px;padding: 20px;color: white;text-align: center;background-image: linear-gradient(
         rgba(0,0,0,0.6),
         rgba(0,0,0,0.6)
     ),
-    url("/Frontend/IMG/background_login.jpeg");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-}
+    url("/Frontend/IMG/background_login.jpeg");background-size: cover;background-position: center;background-repeat: no-repeat;}
 
-/* Título do topo */
 .container h1{
     font-size: 30px;
     font-weight: 600;
@@ -35,7 +13,6 @@
     width: 100px;
 }
 
-/* Card de login */
 .boxLogin{
     width: 100%;
     max-width: 360px;
@@ -49,7 +26,6 @@
     gap: 25px;
 }
 
-/* Cabeçalho do card */
 .headerLogin h1{
     font-size: 30px;
     font-weight: bold;
@@ -67,12 +43,10 @@
     width: 90px;
 }
 
-/* Conjunto dos inputs */
 .conjunto{
     width: 100%;
 }
 
-/* Labels + inputs */
 .boxContent{
     margin-bottom: 18px;
 }
@@ -84,7 +58,6 @@
     color: #333;
 }
 
-/* Inputs */
 .boxContent input{
     width: 100%;
     height: 36px;
@@ -95,7 +68,6 @@
     outline: none;
 }
 
-/* Botão */
 .boxContent button{
     width: 100%;
     height: 38px;
@@ -113,7 +85,6 @@
     background-color: #081f5c;
 }
 
-/* Texto de recuperar senha */
 .boxContent p{
     margin-top: 10px;
     font-size: 14px;
@@ -129,6 +100,7 @@
 .boxContent a:hover{
     text-decoration: underline;
 }
+
 .erro-login{
     color: #a0070f;
     background-color: #ffd2d2;
@@ -139,36 +111,27 @@
     text-align: center;
 }
 
-@media (max-width: 480px){
-
-    .boxLogin{
+@media (max-width: 480px){.boxLogin{
         padding: 30px 20px;
         border-radius: 12px;
     }
-
-    .headerLogin h1{
+.headerLogin h1{
         font-size: 24px;
     }
-
-    .headerLogin h3{
+.headerLogin h3{
         font-size: 14px;
     }
-
-    .headerLogin img{
+.headerLogin img{
         width: 70px;
     }
-
-    .boxContent h4{
+.boxContent h4{
         font-size: 14px;
     }
-
-    .boxContent input,
+.boxContent input,
     .boxContent button{
         height: 42px;
         font-size: 14px;
     }
-
-    .boxContent p{
+.boxContent p{
         font-size: 13px;
-    }
-}
+    }}

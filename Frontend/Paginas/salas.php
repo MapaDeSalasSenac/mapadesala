@@ -58,7 +58,7 @@
   <div class="sobreposicao-mobile"></div>
 
   <!-- CONTEÚDO -->
-  <main class="conteudo-principal container">
+  <main class="conteudo-principal">
     <section class="pagina-salas">
       <div class="header-page">
         <h1>Salas</h1>

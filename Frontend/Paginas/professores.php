@@ -58,7 +58,7 @@
   <div class="sobreposicao-mobile"></div>
 
   <!-- CONTEÚDO -->
-  <main class="conteudo-principal container">
+  <main class="conteudo-principal">
     <section class="pagina-professores">
       <!-- TÍTULO + AÇÕES -->
       <div class="header-page">

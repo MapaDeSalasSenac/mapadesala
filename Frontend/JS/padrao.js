@@ -7,7 +7,27 @@
   const relogioEl = document.getElementById("relogio-lateral");
 
   const botaoUsuario = document.getElementById("botao-usuario");
-  const botaoFiltro = document.getElementById("botao-filtro");
+
+  // seletor do botão de filtro (algumas páginas ainda usam variações antigas)
+  const FILTRO_BTN_SELECTOR = [
+    "[data-abrir-filtros]",
+    "#botao-filtro",
+    ".botao-filtro",
+    ".btn-icon.btn-filter",
+    ".btn-icon.btn-filtro",
+  ].join(",");
+
+  const paginaAtual = (() => {
+    const p = (window.location.pathname || "").toLowerCase();
+    if (p.includes("mapadesala")) return "mapa";
+    if (p.includes("salas.php")) return "salas";
+    if (p.includes("turmas.php")) return "turmas";
+    if (p.includes("professores.php")) return "professores";
+    return "outra";
+  })();
+
+  // no mapa, o core já implementa menu/relógio/filtro (evita duplicar handlers)
+  const isMapaDeSalas = paginaAtual === "mapa" || !!document.getElementById("container-salas");
 
   // =========================
   // MENU LATERAL (MOBILE)
@@ -17,13 +37,16 @@
     botaoMenu?.setAttribute("aria-expanded", open ? "true" : "false");
   }
 
+  if (!isMapaDeSalas) {
   botaoMenu?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    setMenuLateralAberto(!document.body.classList.contains("menu-lateral-aberto"));
-  });
+      e.stopPropagation();
+      setMenuLateralAberto(!document.body.classList.contains("menu-lateral-aberto"));
+    });
+  
+    overlayMobile?.addEventListener("click", () => setMenuLateralAberto(false));
+  }
 
-  overlayMobile?.addEventListener("click", () => setMenuLateralAberto(false));
-
+  
   // =========================
   // RELÓGIO (SIDEBAR)
   // =========================
@@ -81,9 +104,8 @@
   }
 
   function fazerLogout() {
-    // Você troca isso quando tiver autenticação real.
-    // Por enquanto: evento + reload.
-    window.dispatchEvent(new CustomEvent("sistema:logout"));
+    // evento padrão do app + reload (você troca depois por redirect/autenticação)
+    window.dispatchEvent(new CustomEvent("app:logout"));
     location.reload();
   }
 
@@ -92,86 +114,239 @@
     abrirFecharMenuUsuario();
   });
 
-  // =========================
-  // MODAL DE FILTROS (GENÉRICO)
-  // - emite eventos para cada página filtrar do jeito dela
-  // =========================
-  let modalFiltrosEl = null;
+  /* =====================================================
+   FILTROS (GLOBAL) — MODAL PERSONALIZADO POR PÁGINA
+   - NÃO roda no Mapa de Salas (lá o mapa já tem filtro próprio)
+   - NÃO usa .modal pra não conflitar com modais CRUD das páginas
+===================================================== */
 
-  const filtrosPadrao = () => ({
-    status: "all", // all | livre | ocupada
-    professor: "",
-    turnos: { matutino: true, vespertino: true, noturno: true },
-  });
+  const getBotoesFiltro = () => Array.from(document.querySelectorAll(FILTRO_BTN_SELECTOR));
 
-  let filtrosAtuais = filtrosPadrao();
+  const FILTROS_STORAGE_KEY = `ui:filtros:${paginaAtual}`;
+
+  const filtrosPadraoPorPagina = () => {
+    switch (paginaAtual) {
+      case "salas":
+        return { q: "", capacidadeMin: "", capacidadeMax: "" };
+      case "turmas":
+        return { q: "", turno: "all", professor: "", sala: "" };
+      case "professores":
+        return { q: "", formacao: "" };
+      default:
+        return { q: "" };
+    }
+  };
+
+  let filtrosAtuais = filtrosPadraoPorPagina();
+
+  function normalizar(v) {
+    return String(v ?? "").trim().toLowerCase();
+  }
+
+  function carregarFiltrosPersistidos() {
+    try {
+      const raw = sessionStorage.getItem(FILTROS_STORAGE_KEY);
+      if (!raw) return;
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === "object") {
+        filtrosAtuais = { ...filtrosPadraoPorPagina(), ...obj };
+      }
+    } catch {}
+  }
+
+  function persistirFiltros() {
+    try {
+      sessionStorage.setItem(FILTROS_STORAGE_KEY, JSON.stringify(filtrosAtuais));
+    } catch {}
+  }
 
   function filtrosSaoPadrao() {
-    const f = filtrosAtuais;
-    return (
-      f.status === "all" &&
-      !String(f.professor || "").trim() &&
-      f.turnos.matutino && f.turnos.vespertino && f.turnos.noturno
-    );
+    const pad = filtrosPadraoPorPagina();
+    const f = filtrosAtuais || {};
+    return Object.keys(pad).every((k) => String(f[k] ?? "") === String(pad[k] ?? ""));
   }
 
   function atualizarIndicadorFiltro() {
-    botaoFiltro?.classList.toggle("tem-filtro", !filtrosSaoPadrao());
+    const ativo = !filtrosSaoPadrao();
+    getBotoesFiltro().forEach((b) => b.classList.toggle("tem-filtro", ativo));
   }
 
-  function abrirModalFiltros() {
-    if (!botaoFiltro) return;
-    if (!modalFiltrosEl) modalFiltrosEl = criarModalFiltros();
-    sincronizarModalComEstado(modalFiltrosEl);
-
-    modalFiltrosEl.classList.add("aberto");
-    document.body.style.overflow = "hidden";
-    atualizarIndicadorFiltro();
-
-    const primeiro = modalFiltrosEl.querySelector("input,button");
-    if (primeiro) primeiro.focus();
+  function emitirFiltros() {
+    window.dispatchEvent(
+      new CustomEvent("app:filtros", { detail: { pagina: paginaAtual, filtros: filtrosAtuais } })
+    );
   }
 
-  function fecharModalFiltros() {
-    if (!modalFiltrosEl) return;
-    modalFiltrosEl.classList.remove("aberto");
-    document.body.style.overflow = "";
+  function aplicarFiltrosNaPagina() {
+    if (isMapaDeSalas) return;
+
+    const cards = document.querySelectorAll(".conteudo-principal .cards .card");
+    if (!cards.length) return;
+
+    const f = filtrosAtuais || {};
+    const q = normalizar(f.q);
+
+    // fallback: se a página não tiver filtro específico ainda, usa só a busca
+    const aplicarBuscaGenerica = () => {
+      cards.forEach((card) => {
+        const texto = normalizar(card.innerText || "");
+        const ok = !q || texto.includes(q);
+        card.style.display = ok ? "" : "none";
+      });
+    };
+
+    if (paginaAtual === "salas") {
+      const min = f.capacidadeMin !== "" ? Number(f.capacidadeMin) : null;
+      const max = f.capacidadeMax !== "" ? Number(f.capacidadeMax) : null;
+
+      cards.forEach((card) => {
+        const texto = normalizar(card.innerText || "");
+        const nome = normalizar(card.querySelector(".card-h3")?.textContent || "");
+        const capStr =
+          card.querySelector(".btn-edit")?.getAttribute("data-capacidade") ||
+          card.querySelector(".btn-edit")?.dataset?.capacidade ||
+          "";
+        const cap = Number(String(capStr).replace(/[^\d]/g, "")) || 0;
+
+        let ok = true;
+
+        if (q && !(nome.includes(q) || texto.includes(q))) ok = false;
+
+        if (min !== null) ok = ok && cap >= min;
+        if (max !== null) ok = ok && cap <= max;
+
+        card.style.display = ok ? "" : "none";
+      });
+      return;
+    }
+
+    if (paginaAtual === "turmas") {
+      const turno = normalizar(f.turno);
+      const prof = normalizar(f.professor);
+      const sala = normalizar(f.sala);
+
+      cards.forEach((card) => {
+        const texto = normalizar(card.innerText || "");
+
+        let ok = true;
+        if (q && !texto.includes(q)) ok = false;
+
+        if (turno && turno !== "all" && !texto.includes(turno)) ok = false;
+        if (prof && !texto.includes(prof)) ok = false;
+        if (sala && !texto.includes(sala)) ok = false;
+
+        card.style.display = ok ? "" : "none";
+      });
+      return;
+    }
+
+    if (paginaAtual === "professores") {
+      const formacao = normalizar(f.formacao);
+
+      cards.forEach((card) => {
+        const texto = normalizar(card.innerText || "");
+        const nome = normalizar(card.querySelector(".professor-nome")?.textContent || "");
+
+        let ok = true;
+        if (q && !(nome.includes(q) || texto.includes(q))) ok = false;
+        if (formacao && !texto.includes(formacao)) ok = false;
+
+        card.style.display = ok ? "" : "none";
+      });
+      return;
+    }
+
+    aplicarBuscaGenerica();
+  }
+
+  // =========================
+  // MODAL DE FILTROS (ÚNICO) — não conflita com .modal das páginas
+  // =========================
+  let modalFiltrosEl = null;
+  let botaoFiltroOrigem = null;
+
+  function montarCamposDaPagina() {
+    if (paginaAtual === "salas") {
+      return `
+        <div class="campo">
+          <div class="rotulo">Buscar</div>
+          <input class="entrada" type="text" name="q" placeholder="Ex: Sala 01" />
+        </div>
+
+        <div class="campo">
+          <div class="rotulo">Capacidade</div>
+          <div class="linha linha--grid2">
+            <input class="entrada" type="number" min="0" name="capacidadeMin" placeholder="Mín." />
+            <input class="entrada" type="number" min="0" name="capacidadeMax" placeholder="Máx." />
+          </div>
+        </div>
+      `;
+    }
+
+    if (paginaAtual === "turmas") {
+      return `
+        <div class="campo">
+          <div class="rotulo">Buscar</div>
+          <input class="entrada" type="text" name="q" placeholder="Nome, sala ou professor..." />
+        </div>
+
+        <div class="campo">
+          <div class="rotulo">Turno</div>
+          <select class="entrada" name="turno">
+            <option value="all">Todos</option>
+            <option value="matutino">Manhã</option>
+            <option value="vespertino">Tarde</option>
+            <option value="noturno">Noite</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <div class="rotulo">Professor</div>
+          <input class="entrada" type="text" name="professor" placeholder="Ex: Carlos" />
+        </div>
+
+        <div class="campo">
+          <div class="rotulo">Sala</div>
+          <input class="entrada" type="text" name="sala" placeholder="Ex: Sala 03 / Externa" />
+        </div>
+      `;
+    }
+
+    if (paginaAtual === "professores") {
+      return `
+        <div class="campo">
+          <div class="rotulo">Buscar</div>
+          <input class="entrada" type="text" name="q" placeholder="Ex: Ana" />
+        </div>
+
+        <div class="campo">
+          <div class="rotulo">Formação</div>
+          <input class="entrada" type="text" name="formacao" placeholder="Ex: Redes, ADS..." />
+        </div>
+      `;
+    }
+
+    return `
+      <div class="campo">
+        <div class="rotulo">Buscar</div>
+        <input class="entrada" type="text" name="q" placeholder="Digite para filtrar..." />
+      </div>
+    `;
   }
 
   function criarModalFiltros() {
     const overlay = document.createElement("div");
-    overlay.className = "sobreposicao-modal";
+    overlay.className = "sobreposicao-modal-filtros";
 
     overlay.innerHTML = `
-      <div class="modal" role="dialog" aria-modal="true" aria-label="Filtros">
+      <div class="modal-filtros" role="dialog" aria-modal="true" aria-label="Filtros">
         <div class="cabecalho-modal">
           <div class="titulo-modal">Filtros</div>
-          <button class="fechar-modal" type="button" data-acao="fechar">✕</button>
+          <button class="fechar-modal" type="button" data-acao="fechar" aria-label="Fechar">✕</button>
         </div>
 
         <div class="corpo-modal">
-          <div class="campo">
-            <div class="rotulo">Status</div>
-            <div class="linha">
-              <label class="pilula"><input type="radio" name="status" value="all"> Todos</label>
-              <label class="pilula"><input type="radio" name="status" value="livre"> Só livres</label>
-              <label class="pilula"><input type="radio" name="status" value="ocupada"> Só ocupadas</label>
-            </div>
-          </div>
-
-          <div class="campo">
-            <div class="rotulo">Professor</div>
-            <input class="entrada" type="text" name="professor" placeholder="Ex: Carlos" />
-          </div>
-
-          <div class="campo">
-            <div class="rotulo">Turno</div>
-            <div class="linha">
-              <label class="pilula"><input type="checkbox" name="turno" value="matutino"> Manhã</label>
-              <label class="pilula"><input type="checkbox" name="turno" value="vespertino"> Tarde</label>
-              <label class="pilula"><input type="checkbox" name="turno" value="noturno"> Noite</label>
-            </div>
-          </div>
+          ${montarCamposDaPagina()}
         </div>
 
         <div class="acoes-modal">
@@ -181,10 +356,12 @@
       </div>
     `;
 
+    // click fora fecha
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) fecharModalFiltros();
     });
 
+    // ações
     overlay.addEventListener("click", (e) => {
       const acao = e.target.closest("[data-acao]")?.dataset.acao;
       if (!acao) return;
@@ -192,29 +369,35 @@
       if (acao === "fechar") fecharModalFiltros();
 
       if (acao === "limpar") {
-        filtrosAtuais = filtrosPadrao();
+        filtrosAtuais = filtrosPadraoPorPagina();
+        persistirFiltros();
         sincronizarModalComEstado(overlay);
         atualizarIndicadorFiltro();
-        window.dispatchEvent(new CustomEvent("sistema:filtros", { detail: filtrosAtuais }));
+        aplicarFiltrosNaPagina();
+        emitirFiltros();
       }
 
       if (acao === "aplicar") {
         sincronizarEstadoComModal(overlay);
+        persistirFiltros();
         atualizarIndicadorFiltro();
-        window.dispatchEvent(new CustomEvent("sistema:filtros", { detail: filtrosAtuais }));
+        aplicarFiltrosNaPagina();
+        emitirFiltros();
         fecharModalFiltros();
       }
     });
 
-    // garante pelo menos 1 turno
-    overlay.addEventListener("change", (e) => {
-      const t = e.target;
-      if (t?.name !== "turno") return;
-
-      const checks = overlay.querySelectorAll('input[name="turno"]');
-      let on = 0;
-      checks.forEach((c) => { if (c.checked) on++; });
-      if (on === 0) t.checked = true;
+    // atalho: filtra ao digitar (sem fechar)
+    overlay.addEventListener("input", (e) => {
+      const el = e.target;
+      if (!el?.name) return;
+      // só live para campo q (busca)
+      if (el.name !== "q") return;
+      sincronizarEstadoComModal(overlay);
+      persistirFiltros();
+      atualizarIndicadorFiltro();
+      aplicarFiltrosNaPagina();
+      emitirFiltros();
     });
 
     document.body.appendChild(overlay);
@@ -222,38 +405,182 @@
   }
 
   function sincronizarModalComEstado(overlay) {
-    const f = filtrosAtuais;
+    const f = filtrosAtuais || {};
+    overlay.querySelectorAll("input[name], select[name]").forEach((el) => {
+      const name = el.getAttribute("name");
+      if (!name) return;
 
-    overlay.querySelectorAll('input[name="status"]').forEach((r) => {
-      r.checked = (r.value === f.status);
-    });
+      if (el.tagName === "SELECT") {
+        el.value = String(f[name] ?? "");
+        return;
+      }
 
-    overlay.querySelector('input[name="professor"]').value = f.professor || "";
-
-    overlay.querySelectorAll('input[name="turno"]').forEach((c) => {
-      c.checked = !!f.turnos[c.value];
+      el.value = String(f[name] ?? "");
     });
   }
 
   function sincronizarEstadoComModal(overlay) {
-    const status = overlay.querySelector('input[name="status"]:checked')?.value || "all";
-    const professor = overlay.querySelector('input[name="professor"]')?.value || "";
+    const pad = filtrosPadraoPorPagina();
+    const novo = { ...pad };
 
-    const turnos = { matutino: false, vespertino: false, noturno: false };
-    overlay.querySelectorAll('input[name="turno"]').forEach((c) => {
-      turnos[c.value] = !!c.checked;
+    overlay.querySelectorAll("input[name], select[name]").forEach((el) => {
+      const name = el.getAttribute("name");
+      if (!name || !(name in novo)) return;
+      novo[name] = String(el.value ?? "").trim();
     });
 
-    // fallback: pelo menos 1 turno
-    if (!Object.values(turnos).some(Boolean)) turnos.matutino = true;
+    // normalizações simples
+    if ("capacidadeMin" in novo && novo.capacidadeMin !== "" && Number.isNaN(Number(novo.capacidadeMin))) novo.capacidadeMin = "";
+    if ("capacidadeMax" in novo && novo.capacidadeMax !== "" && Number.isNaN(Number(novo.capacidadeMax))) novo.capacidadeMax = "";
 
-    filtrosAtuais = { status, professor, turnos };
+    filtrosAtuais = novo;
   }
 
-  botaoFiltro?.addEventListener("click", abrirModalFiltros);
+  function abrirModalFiltros(botao) {
+    if (isMapaDeSalas) return;
 
+    botaoFiltroOrigem = botao || null;
+
+    if (!modalFiltrosEl) modalFiltrosEl = criarModalFiltros();
+    else {
+      // se mudou de página/HTML e reaproveitou cache, garante campos corretos
+      const corpo = modalFiltrosEl.querySelector(".corpo-modal");
+      if (corpo) corpo.innerHTML = montarCamposDaPagina();
+    }
+
+    sincronizarModalComEstado(modalFiltrosEl);
+
+    modalFiltrosEl.classList.add("aberto");
+    document.body.style.overflow = "hidden";
+
+    const primeiro = modalFiltrosEl.querySelector("input,select,button");
+    if (primeiro) primeiro.focus();
+  }
+
+  function fecharModalFiltros() {
+    if (!modalFiltrosEl) return;
+    modalFiltrosEl.classList.remove("aberto");
+    document.body.style.overflow = "";
+    botaoFiltroOrigem?.focus?.();
+  }
+
+  // abre o modal em QUALQUER botão de filtro
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(FILTRO_BTN_SELECTOR);
+    if (!btn) return;
+    if (isMapaDeSalas) return; // mapa tem filtro próprio
+    e.preventDefault();
+    abrirModalFiltros(btn);
+  }, true);
+
+  // init do módulo de filtros
+  if (!isMapaDeSalas) {
+    carregarFiltrosPersistidos();
+    atualizarIndicadorFiltro();
+    aplicarFiltrosNaPagina();
+  }
+
+
+  /* =====================================================
+     TRANSIÇÃO ENTRE PÁGINAS (GLOBAL, DIRECIONAL, EXIT+ENTER)
+  ===================================================== */
+  (function paginaTransicaoDirecional(){
+    const DURATION = 150; // ajuste pra bater com seu --transicao-pagina-dur
+
+    function getMenuItems(){
+      return Array.from(document.querySelectorAll(".barra-lateral .nav-lateral .item-nav"));
+    }
+
+    function getIndexFromLi(li){
+      const items = getMenuItems();
+      return items.indexOf(li);
+    }
+
+    function getCurrentIndex(){
+      const items = getMenuItems();
+      const ativo = document.querySelector(".barra-lateral .nav-lateral .item-nav.ativo");
+      if (ativo) return getIndexFromLi(ativo);
+
+      const here = new URL(window.location.href);
+      for (let i = 0; i < items.length; i++){
+        const a = items[i].querySelector("a[href]");
+        if (!a) continue;
+        try{
+          const u = new URL(a.getAttribute("href"), here);
+          if (u.pathname === here.pathname) return i;
+        }catch{}
+      }
+      return -1;
+    }
+
+    // ENTER: aplica a animação na página nova (uma vez)
+    (function aplicarEntrada(){
+      const dir = sessionStorage.getItem("ui:transicaoDirecao");
+      if (!dir) return;
+
+      sessionStorage.removeItem("ui:transicaoDirecao");
+      document.body.classList.remove("entrada-pagina--up", "entrada-pagina--down");
+      document.body.classList.add(dir === "up" ? "entrada-pagina--up" : "entrada-pagina--down");
+
+      window.setTimeout(() => {
+        document.body.classList.remove("entrada-pagina--up", "entrada-pagina--down");
+      }, DURATION + 120);
+    })();
+
+    window.addEventListener("pageshow", () => {
+      document.body.classList.remove("transicao-pagina--up", "transicao-pagina--down");
+    });
+
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest(".barra-lateral .nav-lateral a");
+      if (!a) return;
+
+      if (a.target === "_blank") return;
+      if (a.hasAttribute("download")) return;
+      if (e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      const href = a.getAttribute("href");
+      if (!href || href.startsWith("#")) return;
+
+      let dest;
+      try{
+        dest = new URL(href, window.location.href);
+        if (dest.origin !== window.location.origin) return;
+        if (dest.href === window.location.href) return;
+      }catch{
+        return;
+      }
+
+      e.preventDefault();
+
+      const li = a.closest(".item-nav");
+      const toIndex = li ? getIndexFromLi(li) : -1;
+      const fromIndex = getCurrentIndex();
+
+      const goingDown = (fromIndex !== -1 && toIndex !== -1) ? (toIndex > fromIndex) : true;
+      const dir = goingDown ? "down" : "up";
+
+      sessionStorage.setItem("ui:transicaoDirecao", dir);
+
+      document.body.classList.remove("menu-lateral-aberto");
+
+      document.body.classList.remove("transicao-pagina--up", "transicao-pagina--down");
+      document.body.classList.add(goingDown ? "transicao-pagina--down" : "transicao-pagina--up");
+
+      window.setTimeout(() => {
+        window.location.href = dest.href;
+      }, DURATION);
+    }, { capture: true });
+  })();
+
+  // INIT
+  if (!isMapaDeSalas) iniciarRelogio();
+  // (no mapa, o core já atualiza o relógio/filtros)
+
+})();
   // =========================
-  // ESC fecha: sidebar + modal + menu usuário
+  // ESC fecha: sidebar + modal de filtros + menu usuário
   // =========================
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
@@ -266,7 +593,4 @@
     }
   });
 
-  // INIT
-  iniciarRelogio();
-  atualizarIndicadorFiltro();
-})();
+

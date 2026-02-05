@@ -1,94 +1,9 @@
-/* RESET */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: 'Montserrat', sans-serif;
+/* deixa o conteúdo “centralizado” como no mapa */
+.conteudo-principal > section{
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-/* VARIÁVEIS */
-:root {
-  --laranja: #ff7a00;
-  --azul: #0b2c6d;
-  --cinza-bg: #f2f2f2;
-  --cinza-card: #eaeaea;
-  --cinza-linha: #d0d0d0;
-  --texto: #222;
-}
-
-/* BODY */
-body {
-  background-color: var(--cinza-bg);
-  color: var(--texto);
-  display: flex;
-}
-
-/* TOPBAR */
-.topbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 60px;
-  background-color: var(--laranja);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  z-index: 1000;
-}
-
-.menu-toggle,
-.user-button {
-  background: none;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-  color: #fff;
-}
-
-.topbar-logo img {
-  height: 35px;
-}
-
-/* SIDEBAR */
-.sidebar {
-  position: fixed;
-  top: 60px;
-  left: 0;
-  width: 200px;
-  height: calc(100vh - 60px);
-  background-color: var(--azul);
-  padding-top: 30px;
-}
-
-.sidebar .sidebar-nav ul li a {text-decoration: none; color: white;}
-
-.sidebar-nav ul {
-  list-style: none;
-}
-
-.nav-item {
-  padding: 15px 25px;
-  color: #fff;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.nav-item:hover,
-.nav-item.active {
-  background-color: rgba(255, 255, 255, 0.15);
-}
-
-/* CONTEÚDO */
-.container {
-  margin-left: 200px;
-  margin-top: 60px;
-  padding: 40px;
-  width: 100%;
-}
-
-/* HEADER DA PÁGINA */
 .header-page {
   display: flex;
   justify-content: space-between;
@@ -103,7 +18,6 @@ body {
   padding-bottom: 5px;
 }
 
-/* AÇÕES */
 .actions-bar {
   display: flex;
   gap: 12px;
@@ -129,7 +43,6 @@ body {
   box-shadow: 0 6px 15px rgba(0,0,0,0.15);
 }
 
-/* CARDS */
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -137,13 +50,12 @@ body {
 }
 
 .card {
-  background-color: var(--cinza-card);
+  background-color: #fff;
   border-radius: 18px;
   padding: 20px 25px;
   position: relative;
 }
 
-/* BOTÃO EDITAR */
 .btn-edit {
   position: absolute;
   top: 15px;
@@ -161,7 +73,6 @@ body {
   transform: scale(1.1);
 }
 
-/* TEXTO */
 .professor-nome {
   font-size: 18px;
   font-weight: 600;
@@ -176,15 +87,13 @@ body {
   margin: 8px 0;
 }
 
-/* LINHAS */
 .line {
   height: 2px;
-  background-color: var(--cinza-linha);
+  background-color: var(--borda);
   margin: 6px 0;
   border-radius: 2px;
 }
 
-/* Modal fechado por padrão */
 .modal {
   position: absolute;
   inset: 0;
@@ -194,9 +103,6 @@ body {
   font-size: 18px;
 }
 
-/* ============================================================
-   MODAL - ESTILIZAÇÃO (SEGUINDO SALAS.CSS COM HOVERS)
-   ============================================================ */
 .modal {
   position: fixed;
   inset: 0;
@@ -230,10 +136,8 @@ body {
   border-top: 6px solid var(--laranja);
 }
 
-@keyframes modalIn {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
+@keyframes modalIn {from { transform: scale(0.95); opacity: 0; }
+to { transform: scale(1); opacity: 1; }}
 
 .modal__header {
   padding: 20px 25px;
@@ -250,7 +154,7 @@ body {
 }
 
 .modal__close {
-  background: var(--cinza-bg);
+  background: var(--bg);
   border: none;
   width: 35px;
   height: 35px;
@@ -264,7 +168,6 @@ body {
   justify-content: center;
 }
 
-/* HOVER: Botão Fechar */
 .modal__close:hover {
   background: var(--laranja);
   color: white;
@@ -296,13 +199,12 @@ body {
 .modal__body input {
   width: 100%;
   padding: 12px 15px;
-  border: 2px solid var(--cinza-linha);
+  border: 2px solid var(--borda);
   border-radius: 8px;
   font-size: 16px;
   transition: all 0.2s ease;
 }
 
-/* HOVER/FOCUS: Inputs */
 .modal__body input:hover {
   border-color: #b0b0b0;
 }
@@ -313,7 +215,6 @@ body {
   box-shadow: 0 0 0 4px rgba(255, 107, 44, 0.1);
 }
 
-/* BOTÃO DE AÇÃO DENTRO DO MODAL */
 .buttonCriar {
   background-color: var(--laranja);
   color: white;
@@ -327,7 +228,6 @@ body {
   margin-top: 10px;
 }
 
-/* HOVER: Botão Criar */
 .buttonCriar:hover {
   background-color: #e66e00;
   transform: translateY(-2px);

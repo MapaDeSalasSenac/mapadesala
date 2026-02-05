@@ -96,14 +96,28 @@ body{
 
 .nav-lateral{ flex:1; }
 
+/* mantém o visual e o hover exatamente igual */
 .item-nav{
-  padding:16px 24px;
-  cursor:pointer;
-  font-weight:500;
-  transition:background .2s;
+  padding: 0;           /* <- tira daqui */
+  cursor: pointer;
+  font-weight: 500;
+  transition: background .2s;
 }
+
 .item-nav:hover,
-.item-nav.ativo{ background:rgba(255,255,255,.15); }
+.item-nav.ativo{
+  background: rgba(255,255,255,.15);
+}
+
+/* agora o link ocupa o item inteiro + recebe o padding */
+.item-nav > a{
+  display: block;
+  padding: 16px 24px;   /* <- vem pra cá */
+  color: inherit;
+  text-decoration: none;
+}
+
+
 
 .rodape-lateral{
   margin-top:auto;
@@ -217,6 +231,8 @@ body{
   margin-left:240px;
   margin-top:60px;
   padding:20px 30px 40px;
+  width: calc(100% - 240px);
+  max-width: calc(100% - 240px);
 }
 
 /* header de página reaproveitável */
@@ -333,7 +349,9 @@ body{
 .sobreposicao-modal{
   position:fixed;
   inset:0;
-  background:rgba(17,24,39,.45);
+  background:rgba(8,8,10,.45);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   display:flex;
   align-items:center;
   justify-content:center;
@@ -348,6 +366,45 @@ body{
   pointer-events:auto;
 }
 
+
+/* Modal de filtros (namespaced, evita conflito com .modal das páginas) */
+.sobreposicao-modal-filtros{
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  background:rgba(8,8,10,.45);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .15s ease;
+  z-index:3000;
+}
+.sobreposicao-modal-filtros.aberto{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.modal-filtros{
+  width:min(560px, 100%);
+  background:rgba(255,255,255,.96);
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,.10);
+  box-shadow:0 22px 50px rgba(0,0,0,.18);
+  overflow:hidden;
+  transform:translateY(10px);
+  transition:transform .14s ease;
+}
+.sobreposicao-modal-filtros.aberto .modal-filtros{ transform:translateY(0); }
+
+.linha--grid2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
 .modal{
   width:min(560px, 100%);
   background:#fff;
@@ -450,6 +507,370 @@ body{
 .botao:hover{ transform:translateY(-1px); }
 
 /* =====================================================
+   PAINEL DE FILTROS (GLOBAL)
+===================================================== */
+
+.painel-filtros{
+  position: fixed;
+  top: 70px;
+  right: 16px;
+  width: min(360px, calc(100vw - 32px));
+  background: #fff;
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.18);
+  padding: 14px;
+  z-index: 9999;
+
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity .15s var(--transicao-pagina-ease, ease),
+              transform .15s var(--transicao-pagina-ease, ease);
+}
+
+.painel-filtros.is-open{
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.painel-filtros__topo{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.painel-filtros__titulo{
+  font-weight: 900;
+  color: var(--azul);
+  font-size: 14px;
+}
+
+.painel-filtros__fechar{
+  border: 1px solid rgba(0,0,0,.12);
+  background: rgba(0,0,0,.03);
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.painel-filtros__campo{
+  display:flex;
+  flex-direction:column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.painel-filtros__label{
+  font-size: 12px;
+  font-weight: 800;
+  color: #374151;
+}
+
+.painel-filtros__input{
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.14);
+  outline: none;
+  font-weight: 600;
+}
+
+.painel-filtros__input:focus{
+  border-color: rgba(255,107,44,.55);
+  box-shadow: 0 0 0 3px rgba(255,107,44,.18);
+}
+
+.painel-filtros__acoes{
+  display:flex;
+  gap: 10px;
+  justify-content:flex-end;
+}
+
+.painel-filtros__btn{
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.12);
+  background: rgba(0,0,0,.03);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.painel-filtros__btn--primario{
+  background: var(--laranja);
+  border-color: rgba(255,107,44,.40);
+  color: #fff;
+}
+
+/* =====================================================
+   MODAL BASE (GLOBAL) — usado pelo filtro
+===================================================== */
+
+.sobreposicao-modal{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 9999;
+  display: none;
+  padding: 18px;
+}
+
+.sobreposicao-modal.aberto{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sobreposicao-modal .modal{
+  width: min(520px, calc(100vw - 36px));
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid var(--borda);
+  box-shadow: 0 24px 70px rgba(0,0,0,.25);
+  overflow: hidden;
+}
+
+.cabecalho-modal{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px dashed rgba(0,0,0,.16);
+}
+
+.titulo-modal{
+  font-weight: 900;
+  color: var(--azul);
+}
+
+.fechar-modal{
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.12);
+  background: rgba(0,0,0,.04);
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.corpo-modal{ padding: 14px 16px; }
+
+.campo{ display:flex; flex-direction:column; gap: 8px; margin-bottom: 12px; }
+.rotulo{ font-weight: 800; font-size: 12px; color: #374151; }
+
+.linha{ display:flex; flex-wrap:wrap; gap: 8px; }
+
+.pilula{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 1px solid rgba(0,0,0,.12);
+  border-radius: 999px;
+  background: rgba(0,0,0,.03);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.entrada{
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.14);
+  outline: none;
+  font-weight: 600;
+}
+
+.entrada:focus{
+  border-color: rgba(255,107,44,.55);
+  box-shadow: 0 0 0 3px rgba(255,107,44,.18);
+}
+
+.acoes-modal{
+  display:flex;
+  justify-content:flex-end;
+  gap: 10px;
+  padding: 14px 16px;
+  border-top: 1px dashed rgba(0,0,0,.16);
+}
+
+.botao{
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,.12);
+  background: rgba(0,0,0,.03);
+  font-weight: 900;
+  cursor:pointer;
+}
+
+.botao.primario{
+  background: var(--laranja);
+  border-color: rgba(255,107,44,.40);
+  color: #fff;
+}
+
+
+/* =====================================================
+   CORRIGE ESTOURO HORIZONTAL (GLOBAL)
+===================================================== */
+
+/* 1) nunca permitir scroll horizontal no site */
+html, body{
+  overflow-x: hidden;
+}
+
+/* 2) garante que o main não estoure por causa de flex/grid */
+.conteudo-principal{
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* 3) qualquer bloco dentro do main pode encolher */
+.conteudo-principal *{
+  min-width: 0;
+}
+
+/* 4) mídia (img/svg/canvas) nunca estoura */
+img, svg, canvas, video{
+  max-width: 100%;
+  height: auto;
+}
+
+
+/* =====================================================
+   TRANSIÇÃO ENTRE PÁGINAS (GLOBAL, DIRECIONAL, EXIT+ENTER)
+===================================================== */
+
+:root{
+  --transicao-pagina-dur: 220ms;
+  --transicao-pagina-dist: 14px;
+  --transicao-pagina-ease: cubic-bezier(.22, 1, .36, 1); /* suave e “premium” */
+}
+
+@media (prefers-reduced-motion: reduce){
+  body[class*="transicao-pagina"] .conteudo-principal{
+    animation: none !important;
+    transform: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/* garante base */
+.conteudo-principal{
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
+}
+
+
+/* ===== EXIT ===== */
+body.transicao-pagina--down .conteudo-principal{
+  animation: pagina-exit-down var(--transicao-pagina-dur) var(--transicao-pagina-ease) forwards;
+}
+
+body.transicao-pagina--up .conteudo-principal{
+  animation: pagina-exit-up var(--transicao-pagina-dur) var(--transicao-pagina-ease) forwards;
+}
+
+/* ===== ENTER (quando a nova página carrega) ===== */
+body.entrada-pagina--down .conteudo-principal{
+  animation: pagina-enter-down calc(var(--transicao-pagina-dur) + 60ms) var(--transicao-pagina-ease);
+}
+
+body.entrada-pagina--up .conteudo-principal{
+  animation: pagina-enter-up calc(var(--transicao-pagina-dur) + 60ms) var(--transicao-pagina-ease);
+}
+/* =====================================================
+   TRANSIÇÃO: TOPBAR + SIDEBAR (SEM PARALLAX, SÓ VIDA)
+===================================================== */
+
+.barra-topo,
+.barra-lateral{
+  filter: blur(0);
+  opacity: 1;
+  will-change: opacity, filter;
+}
+
+/* EXIT */
+body.transicao-pagina--down .barra-topo,
+body.transicao-pagina--down .barra-lateral,
+body.transicao-pagina--up .barra-topo,
+body.transicao-pagina--up .barra-lateral{
+  animation: ui-exit var(--transicao-pagina-dur) var(--transicao-pagina-ease) forwards;
+}
+
+/* ENTER */
+body.entrada-pagina--down .barra-topo,
+body.entrada-pagina--down .barra-lateral,
+body.entrada-pagina--up .barra-topo,
+body.entrada-pagina--up .barra-lateral{
+  animation: ui-enter calc(var(--transicao-pagina-dur) + 40ms) var(--transicao-pagina-ease);
+}
+
+/* keyframes */
+@keyframes ui-exit{
+  to{ opacity: 1; filter: blur(1px); }
+}
+@keyframes ui-enter{
+  from{ opacity: 1; filter: blur(1px); }
+  to{ opacity: 1; filter: blur(0); }
+}
+/* keyframes — down = você desceu no menu */
+@keyframes pagina-exit-down{
+  to{
+    opacity: 0;
+    transform: translateY(calc(var(--transicao-pagina-dist) * -1)) scale(.99);
+    filter: blur(2.75px);
+  }
+}
+
+@keyframes pagina-enter-down{
+  from{
+    opacity: 0;
+    transform: translateY(var(--transicao-pagina-dist)) scale(.99);
+    filter: blur(2.75px);
+  }
+  to{
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes pagina-exit-up{
+  to{
+    opacity: 0;
+    transform: translateY(var(--transicao-pagina-dist)) scale(.99);
+    filter: blur(2.75px);
+  }
+}
+
+@keyframes pagina-enter-up{
+  from{
+    opacity: 0;
+    transform: translateY(calc(var(--transicao-pagina-dist) * -1)) scale(.99);
+    filter: blur(2.75px);
+  }
+  to{
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+
+
+/* =====================================================
    RESPONSIVO: SIDEBAR OFF-CANVAS
 ===================================================== */
 @media (max-width:1199px){
@@ -472,7 +893,12 @@ body{
 @media (max-width:767px){
   .barra-topo{ padding:0 14px; }
   .logo-topo img{ height:32px; }
-  .conteudo-principal{ padding:16px 14px 32px; }
+  .conteudo-principal{
+    margin-left: 0;              /* <- ESSENCIAL */
+    width: 100%;                 /* <- garante encaixe */
+    max-width: 100%;
+    padding:16px 14px 32px;      /* já existe no teu bloco */
+  }
 
   .cabecalho-pagina{
     flex-direction:column;

@@ -72,30 +72,12 @@ $result = mysqli_query($conexao, $sql);
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Turmas - Senac MA</title>
+  <link rel="icon" type="image/x-icon" href="../IMG/favicon.png">
   <link rel="stylesheet" href="../CSS/padrao.css" />
   <link rel="stylesheet" href="../CSS/turmas.css" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="../JS/padrao.js" defer></script>
   <script src="../JS/turmas.js" defer></script>
-
-  <style>
-    .box{border:1px solid #ddd; border-radius:10px; padding:12px;}
-    label{display:block; font-weight:600; margin-top:8px;}
-    input, select{width:100%; padding:10px; margin-top:6px;}
-    .dias{display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;}
-    .dias label{font-weight:500; margin-top:0; display:flex; align-items:center; gap:6px;}
-    .actions{margin-top:12px; display:flex; gap:10px;}
-    button{padding:10px 14px; border:0; border-radius:10px; cursor:pointer;}
-    button[type="submit"]{background:#2b7; color:#fff;}
-    button[type="button"]{background:#eee;}
-    #preview{margin-top:12px; white-space:pre-wrap; font-family:ui-monospace, monospace;}
-    .warn{color:#b00; font-weight:700;}
-    .ok{color:#070; font-weight:700;}
-    .modal {
-      width: 100%;
-      background:none;
-    }
-  </style>
 </head>
 
 <body>
@@ -118,6 +100,7 @@ $result = mysqli_query($conexao, $sql);
         <li class="item-nav"><a href="professores.php" class="conteudo-barra-lateral">Professores</a></li>
         <li class="item-nav"><a href="salas.php" class="conteudo-barra-lateral">Salas</a></li>
         <li class="item-nav ativo"><a href="turmas.php" class="conteudo-barra-lateral">Turmas</a></li>
+        <li class="item-nav"><a href="creditos.html" class="conteudo-barra-lateral">Créditos</a></li>
       </ul>
     </nav>
 
@@ -131,7 +114,7 @@ $result = mysqli_query($conexao, $sql);
   <div class="sobreposicao-mobile"></div>
 
   <!-- CONTEÚDO -->
-  <main class="conteudo-principal container">
+  <main class="conteudo-principal">
     <section class="pagina-turmas">
       <div class="header-page">
         <h1>Turmas</h1>
