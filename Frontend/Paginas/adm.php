@@ -64,7 +64,7 @@ $result = $conexao->query($sql);
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Administração</title>
+<title>Administração - Senac MA</title>
 
 
 <link rel="stylesheet" href="../CSS/adm.css">
@@ -121,29 +121,35 @@ $result = $conexao->query($sql);
 
         <div class="cards-adm">
             <?php while ($u = $result->fetch_assoc()): ?>
-                <div class="card-adm">
+                    <div class="card-adm">
 
-                    <div class="card-header">
-                        <h3><?= htmlspecialchars($u['email']) ?></h3>
+    <!-- TOPO: BADGE + BOTÕES -->
+    <div class="card-topo">
+        <span class="badge-admin">Usuário</span>
 
-                        <div class="card-acoes">
-                            <button class="btn-delete"
-                                onclick="abrirExcluir(
-                                    <?= $u['id_usuario'] ?>,
-                                    '<?= htmlspecialchars($u['email']) ?>'
-                                )">🗑️</button>
+        <div class="card-acoes">
+            <button class="btn-delete"
+                onclick="abrirExcluir(
+                    <?= $u['id_usuario'] ?>,
+                    '<?= htmlspecialchars($u['email']) ?>'
+                )">🗑️</button>
 
-                            <button class="btn-edit"
-                                onclick="abrirEditar(
-                                    <?= $u['id_usuario'] ?>,
-                                    '<?= htmlspecialchars($u['email']) ?>'
-                                )">✏️</button>
-                        </div>
-                    </div>
+            <button class="btn-edit"
+                onclick="abrirEditar(
+                    <?= $u['id_usuario'] ?>,
+                    '<?= htmlspecialchars($u['email']) ?>'
+                )">✏️</button>
+        </div>
+    </div>
 
-                    <span class="badge-admin">Usuário</span>
+    <!-- EMAIL -->
+    <h3 class="email-usuario">
+        <?= htmlspecialchars($u['email']) ?>
+    </h3>
 
-                </div>
+</div>
+
+
 
             <?php endwhile; ?>
         </div>
