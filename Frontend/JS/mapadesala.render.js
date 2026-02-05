@@ -361,7 +361,7 @@
         <button type="button" class="celula-dia${fora}${sel}${feriado}" data-date="${d}" disabled>
           <div class="numero-dia">${dayNum}</div>
           <div class="etiqueta-feriado" title="${feriadoInfo ? escapeHTML(feriadoInfo.nome) : 'Feriado'}">
-            🎉 ${feriadoInfo ? escapeHTML(feriadoInfo.nome.substring(0, 8)) : 'Feriado'}
+            🎉 ${feriadoInfo ? escapeHTML(feriadoInfo.nome.substring()) : 'Feriado'}
           </div>
         </button>
       `;

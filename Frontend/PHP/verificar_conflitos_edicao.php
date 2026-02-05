@@ -36,13 +36,14 @@ $types = str_repeat("s", count($datas));
 
 // 1) Conflitos do professor (ignorando esta turma)
 $sqlProf = "
-    SELECT te.data
+    SELECT te.data, t.nome_turma
     FROM turma_encontros te
+    INNER JOIN turmas t ON t.id_turma = te.id_turma
     WHERE te.id_professor = ?
     AND te.turno = ?
     AND te.status = 'marcado'
     AND te.data IN ($placeholders)
-    AND te.id_turma != ?
+    AND te.id_turma != ?  -- IGNORA A PRÓPRIA TURMA
 ";
 $stmt = mysqli_prepare($conexao, $sqlProf);
 if (!$stmt) bad("Erro prepare professor.");
@@ -57,30 +58,33 @@ while ($row = mysqli_fetch_assoc($res)) {
     $conflitos_prof[] = $row["data"];
 }
 
-// 2) Conflitos da sala (somente se não for externa)
+// 2) Conflitos da sala (somente se não for externa, ignorando esta turma)
 if (!$atividade_externa) {
-    if (!$id_sala || $id_sala <= 0) bad("Sala inválida (atividade externa desmarcada).");
+    if (!$id_sala || $id_sala <= 0) {
+        // Se não tem sala selecionada e não é externa, não há conflitos de sala
+    } else {
+        $sqlSala = "
+            SELECT te.data, t.nome_turma
+            FROM turma_encontros te
+            INNER JOIN turmas t ON t.id_turma = te.id_turma
+            WHERE te.id_sala = ?
+            AND te.turno = ?
+            AND te.status = 'marcado'
+            AND te.data IN ($placeholders)
+            AND te.id_turma != ?  -- IGNORA A PRÓPRIA TURMA
+        ";
+        $stmt2 = mysqli_prepare($conexao, $sqlSala);
+        if (!$stmt2) bad("Erro prepare sala.");
 
-    $sqlSala = "
-        SELECT te.data
-        FROM turma_encontros te
-        WHERE te.id_sala = ?
-        AND te.turno = ?
-        AND te.status = 'marcado'
-        AND te.data IN ($placeholders)
-        AND te.id_turma != ?
-    ";
-    $stmt2 = mysqli_prepare($conexao, $sqlSala);
-    if (!$stmt2) bad("Erro prepare sala.");
+        $bindTypes2 = "is" . $types . "i";
+        $params2 = array_merge([$id_sala, $turno], $datas, [$id_turma]);
 
-    $bindTypes2 = "is" . $types . "i";
-    $params2 = array_merge([$id_sala, $turno], $datas, [$id_turma]);
-
-    mysqli_stmt_bind_param($stmt2, $bindTypes2, ...$params2);
-    mysqli_stmt_execute($stmt2);
-    $res2 = mysqli_stmt_get_result($stmt2);
-    while ($row = mysqli_fetch_assoc($res2)) {
-        $conflitos_sala[] = $row["data"];
+        mysqli_stmt_bind_param($stmt2, $bindTypes2, ...$params2);
+        mysqli_stmt_execute($stmt2);
+        $res2 = mysqli_stmt_get_result($stmt2);
+        while ($row = mysqli_fetch_assoc($res2)) {
+            $conflitos_sala[] = $row["data"];
+        }
     }
 }
 

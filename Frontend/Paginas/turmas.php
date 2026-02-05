@@ -24,6 +24,10 @@ $sql = "
     t.atividade_externa,
     t.carga_horaria,
 
+    
+    t.id_professor, 
+    t.id_sala,      
+
     p.nome AS professor_nome,
     s.nome_sala AS sala_nome,
 
@@ -78,6 +82,7 @@ $result = mysqli_query($conexao, $sql);
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="../JS/padrao.js" defer></script>
   <script src="../JS/turmas.js" defer></script>
+  <script src="../JS/editar_turmas.js" defer></script>
 </head>
 
 <body>

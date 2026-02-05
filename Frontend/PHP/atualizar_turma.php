@@ -1,27 +1,52 @@
 <?php
-// CORRIJA: Remova esta linha errada
-// display_errors = On  // <-- ESTÁ ERRADO!
+// atualizar_turma.php - VERSÃO CORRIGIDA (sem duplicar encontros + bind dinâmico seguro)
 
-// CORRETO: Use ini_set() para habilitar display_errors
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require "conexao.php";
 
-// Iniciar sessão apenas se não estiver iniciada
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Debug: registrar dados recebidos
-error_log("=== ATUALIZAR TURMA ===");
-error_log("POST data: " . print_r($_POST, true));
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    error_log("Método não permitido: " . $_SERVER['REQUEST_METHOD']);
+function redirectWithError(string $msg): void {
+    $_SESSION['erro'] = $msg;
     header("Location: ../Paginas/turmas.php");
     exit;
+}
+
+function redirectWithSuccess(string $msg): void {
+    $_SESSION['sucesso'] = $msg;
+    header("Location: ../Paginas/turmas.php");
+    exit;
+}
+
+/**
+ * bind dinâmico seguro (por referência)
+ * @param mysqli_stmt $stmt
+ * @param string $types
+ * @param array $params
+ */
+function bindParams(mysqli_stmt $stmt, string $types, array &$params): void {
+    $refs = [];
+    foreach ($params as $k => &$v) {
+        $refs[$k] = &$v;
+    }
+
+    // A ORDEM CERTA: stmt, types, &param1, &param2...
+    array_unshift($refs, $types);
+    array_unshift($refs, $stmt);
+
+    if (!call_user_func_array('mysqli_stmt_bind_param', $refs)) {
+        throw new Exception("Erro ao bindar parâmetros (bindParams).");
+    }
+}
+
+// Só aceita POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    redirectWithError("Método não permitido.");
 }
 
 // Validar campos obrigatórios
@@ -29,239 +54,456 @@ $campos_obrigatorios = ['id_turma', 'nome_turma', 'cod_turma', 'carga_horaria', 
 $campos_faltando = [];
 
 foreach ($campos_obrigatorios as $campo) {
-    if (empty($_POST[$campo])) {
+    if (!isset($_POST[$campo]) || trim((string)$_POST[$campo]) === '') {
         $campos_faltando[] = $campo;
     }
 }
 
 if (!empty($campos_faltando)) {
-    $_SESSION['erro'] = "Campos obrigatórios faltando: " . implode(', ', $campos_faltando);
-    error_log("Campos faltando: " . implode(', ', $campos_faltando));
-    header("Location: ../Paginas/turmas.php");
-    exit;
+    redirectWithError("Campos obrigatórios faltando: " . implode(', ', $campos_faltando));
 }
 
-$id_turma = (int)$_POST['id_turma'];
-$nome_turma = mysqli_real_escape_string($conexao, $_POST['nome_turma']);
-$cod_turma = mysqli_real_escape_string($conexao, $_POST['cod_turma']);
+// Sanitização/normalização
+$id_turma      = (int)$_POST['id_turma'];
+$nome_turma    = trim((string)$_POST['nome_turma']);
+$cod_turma     = trim((string)$_POST['cod_turma']);
 $carga_horaria = (int)$_POST['carga_horaria'];
-$turno = mysqli_real_escape_string($conexao, $_POST['turno']);
-$data_recalculo = $_POST['data_recalculo'] ?? date('Y-m-d');
+$turno         = trim((string)$_POST['turno']);
+$data_recalculo = isset($_POST['data_recalculo']) ? trim((string)$_POST['data_recalculo']) : null;
+
+// Validar turno
+if (!in_array($turno, ['manha', 'tarde', 'noite'], true)) {
+    redirectWithError("Turno inválido.");
+}
 
 // Campos opcionais
-$id_professor = !empty($_POST['id_professor']) ? (int)$_POST['id_professor'] : null;
-$id_sala = !empty($_POST['id_sala']) ? (int)$_POST['id_sala'] : null;
+$id_professor = (isset($_POST['id_professor']) && $_POST['id_professor'] !== '') ? (int)$_POST['id_professor'] : 0; // 0 => NULL
+$id_sala      = (isset($_POST['id_sala']) && $_POST['id_sala'] !== '') ? (int)$_POST['id_sala'] : 0; // 0 => NULL
 $atividade_externa = isset($_POST['atividade_externa']) ? 1 : 0;
 
-// Dias da semana (converter para bitmask)
+// Se for atividade externa, sala deve virar NULL
+if ($atividade_externa === 1) {
+    $id_sala = 0;
+}
+
+// Dias da semana (bitmask)
 $dias_semana = 0;
-$dias_map = ['seg' => 1, 'ter' => 2, 'qua' => 4, 'qui' => 8, 'sex' => 16];
-if (!empty($_POST['dias_semana'])) {
+$dias_map = [
+    'seg' => 1,
+    'ter' => 2,
+    'qua' => 4,
+    'qui' => 8,
+    'sex' => 16
+];
+
+if (!empty($_POST['dias_semana']) && is_array($_POST['dias_semana'])) {
     foreach ($_POST['dias_semana'] as $dia) {
         if (isset($dias_map[$dia])) {
             $dias_semana |= $dias_map[$dia];
         }
     }
+} else {
+    // Se não enviou dias, mantém os atuais
+    $sql_get_dias = "SELECT dias_semana FROM turmas WHERE id_turma = ?";
+    $stmt_get = mysqli_prepare($conexao, $sql_get_dias);
+    if (!$stmt_get) {
+        redirectWithError("Erro ao preparar busca de dias: " . mysqli_error($conexao));
+    }
+    mysqli_stmt_bind_param($stmt_get, 'i', $id_turma);
+    mysqli_stmt_execute($stmt_get);
+    $result_get = mysqli_stmt_get_result($stmt_get);
+    if ($row = mysqli_fetch_assoc($result_get)) {
+        $dias_semana = (int)$row['dias_semana'];
+    }
 }
 
-error_log("Dias da semana calculados: $dias_semana");
-
-// Verificar se turma existe
-$sql_check = "SELECT * FROM turmas WHERE id_turma = ?";
-$stmt_check = mysqli_prepare($conexao, $sql_check);
-if (!$stmt_check) {
-    error_log("Erro prepare check: " . mysqli_error($conexao));
-    $_SESSION['erro'] = "Erro ao verificar turma.";
-    header("Location: ../Paginas/turmas.php");
-    exit;
+// Normalizar data_recalculo: se vazia, tratar como null
+if ($data_recalculo !== null && $data_recalculo === '') {
+    $data_recalculo = null;
 }
 
-mysqli_stmt_bind_param($stmt_check, 'i', $id_turma);
-mysqli_stmt_execute($stmt_check);
-$result_check = mysqli_stmt_get_result($stmt_check);
-
-if (mysqli_num_rows($result_check) === 0) {
-    error_log("Turma não encontrada: $id_turma");
-    $_SESSION['erro'] = "Turma não encontrada.";
-    header("Location: ../Paginas/Turmas.php");
-    exit;
-}
-
-// Iniciar transação
+// Transação
 mysqli_begin_transaction($conexao);
-error_log("Transação iniciada");
 
 try {
-    // 1. Atualizar informações básicas da turma
-    $sql_update = "UPDATE turmas SET 
-                   nome_turma = ?, 
-                   cod_turma = ?, 
-                   carga_horaria = ?, 
-                   turno = ?, 
-                   dias_semana = ?,
-                   id_professor = ?,
-                   id_sala = ?,
-                   atividade_externa = ?
-                   WHERE id_turma = ?";
-    
-    error_log("SQL Update: $sql_update");
-    
+    // ---------- 1) Verificar conflitos (antes de mexer) ----------
+    if (!empty($data_recalculo) && $dias_semana > 0) {
+
+        // Converter bitmask para array (1=seg ... 5=sex)
+        $dias_numeros_array = [];
+        if ($dias_semana & 1)  $dias_numeros_array[] = 1;
+        if ($dias_semana & 2)  $dias_numeros_array[] = 2;
+        if ($dias_semana & 4)  $dias_numeros_array[] = 3;
+        if ($dias_semana & 8)  $dias_numeros_array[] = 4;
+        if ($dias_semana & 16) $dias_numeros_array[] = 5;
+
+        if (!empty($dias_numeros_array)) {
+            $horas_por_encontro = ($turno === 'noite') ? 3 : 4;
+            $total_encontros = (int)ceil($carga_horaria / $horas_por_encontro);
+
+            // Gerar datas a verificar
+            $datas_a_verificar = [];
+            $data_atual = new DateTime($data_recalculo);
+            $count = 0;
+            $max_iteracoes = 365 * 3; // trava segurança
+
+            while (count($datas_a_verificar) < $total_encontros && $count < $max_iteracoes) {
+                $dia_semana_numero = (int)$data_atual->format('N'); // 1..7
+                if (in_array($dia_semana_numero, $dias_numeros_array, true)) {
+                    $datas_a_verificar[] = $data_atual->format('Y-m-d');
+                }
+                $data_atual->modify('+1 day');
+                $count++;
+            }
+
+            if (!empty($datas_a_verificar)) {
+                $placeholders = implode(',', array_fill(0, count($datas_a_verificar), '?'));
+                $typesDates = str_repeat('s', count($datas_a_verificar));
+
+                // Conflito professor (se tiver professor)
+                if ($id_professor > 0) {
+                    $sql_conflito_prof = "
+                        SELECT DISTINCT te.data, t.nome_turma
+                        FROM turma_encontros te
+                        JOIN turmas t ON t.id_turma = te.id_turma
+                        WHERE te.id_professor = ?
+                          AND te.turno = ?
+                          AND te.status = 'marcado'
+                          AND te.data IN ($placeholders)
+                          AND te.id_turma != ?
+                    ";
+                    $stmt_conflito = mysqli_prepare($conexao, $sql_conflito_prof);
+                    if (!$stmt_conflito) {
+                        throw new Exception("Erro prepare conflito professor: " . mysqli_error($conexao));
+                    }
+
+                    $bindTypes = "is" . $typesDates . "i";
+                    $params = [];
+                    $params[] = $id_professor;
+                    $params[] = $turno;
+                    foreach ($datas_a_verificar as $d) $params[] = $d;
+                    $params[] = $id_turma;
+
+                    bindParams($stmt_conflito, $bindTypes, $params);
+                    mysqli_stmt_execute($stmt_conflito);
+                    $result_conflito = mysqli_stmt_get_result($stmt_conflito);
+
+                    $conflitos_prof = [];
+                    while ($row = mysqli_fetch_assoc($result_conflito)) {
+                        $conflitos_prof[] = $row;
+                    }
+
+                    if (!empty($conflitos_prof)) {
+                        $datas_conflito = array_column($conflitos_prof, 'data');
+                        $turmas_conflito = array_column($conflitos_prof, 'nome_turma');
+                        throw new Exception(
+                            "Conflito de professor: já alocado nas datas: " .
+                            implode(', ', $datas_conflito) .
+                            " (Turmas: " . implode(', ', $turmas_conflito) . ")"
+                        );
+                    }
+                }
+
+                // Conflito sala (se não for externa e tiver sala)
+                if ($atividade_externa === 0 && $id_sala > 0) {
+                    $sql_conflito_sala = "
+                        SELECT DISTINCT te.data, t.nome_turma
+                        FROM turma_encontros te
+                        JOIN turmas t ON t.id_turma = te.id_turma
+                        WHERE te.id_sala = ?
+                          AND te.turno = ?
+                          AND te.status = 'marcado'
+                          AND te.data IN ($placeholders)
+                          AND te.id_turma != ?
+                    ";
+                    $stmt_conflito_sala = mysqli_prepare($conexao, $sql_conflito_sala);
+                    if (!$stmt_conflito_sala) {
+                        throw new Exception("Erro prepare conflito sala: " . mysqli_error($conexao));
+                    }
+
+                    $bindTypes2 = "is" . $typesDates . "i";
+                    $params2 = [];
+                    $params2[] = $id_sala;
+                    $params2[] = $turno;
+                    foreach ($datas_a_verificar as $d) $params2[] = $d;
+                    $params2[] = $id_turma;
+
+                    bindParams($stmt_conflito_sala, $bindTypes2, $params2);
+                    mysqli_stmt_execute($stmt_conflito_sala);
+                    $result_conflito_sala = mysqli_stmt_get_result($stmt_conflito_sala);
+
+                    $conflitos_sala = [];
+                    while ($row = mysqli_fetch_assoc($result_conflito_sala)) {
+                        $conflitos_sala[] = $row;
+                    }
+
+                    if (!empty($conflitos_sala)) {
+                        $datas_conflito = array_column($conflitos_sala, 'data');
+                        $turmas_conflito = array_column($conflitos_sala, 'nome_turma');
+                        throw new Exception(
+                            "Conflito de sala: já ocupada nas datas: " .
+                            implode(', ', $datas_conflito) .
+                            " (Turmas: " . implode(', ', $turmas_conflito) . ")"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    // ---------- 2) Atualizar dados da turma ----------
+    // NULLIF(?,0) permite mandar 0 e virar NULL no banco.
+    $sql_update = "UPDATE turmas SET
+        nome_turma = ?,
+        cod_turma = ?,
+        carga_horaria = ?,
+        turno = ?,
+        dias_semana = ?,
+        id_professor = NULLIF(?, 0),
+        id_sala = NULLIF(?, 0),
+        atividade_externa = ?
+        WHERE id_turma = ?";
+
     $stmt_update = mysqli_prepare($conexao, $sql_update);
     if (!$stmt_update) {
         throw new Exception("Erro prepare update: " . mysqli_error($conexao));
     }
-    
-    // Bind dos parâmetros
-    mysqli_stmt_bind_param($stmt_update, 'ssisiiiii', 
-        $nome_turma, 
-        $cod_turma, 
-        $carga_horaria, 
-        $turno, 
+
+    mysqli_stmt_bind_param(
+        $stmt_update,
+        'ssisiiiii',
+        $nome_turma,
+        $cod_turma,
+        $carga_horaria,
+        $turno,
         $dias_semana,
         $id_professor,
         $id_sala,
         $atividade_externa,
         $id_turma
     );
-    
+
     if (!mysqli_stmt_execute($stmt_update)) {
         throw new Exception("Erro ao executar update: " . mysqli_stmt_error($stmt_update));
     }
-    
-    error_log("Turma atualizada com sucesso. Linhas afetadas: " . mysqli_stmt_affected_rows($stmt_update));
-    
-    // 2. Se dias da semana foram alterados, recalcular encontros futuros
-    if ($dias_semana > 0 && !empty($data_recalculo)) {
-        error_log("Iniciando recálculo a partir de: $data_recalculo");
-        
-        // Primeiro, verificar se há encontros futuros para cancelar
-        $sql_check_encontros = "SELECT COUNT(*) as total FROM turma_encontros 
-                               WHERE id_turma = ? 
-                               AND status = 'marcado' 
-                               AND data >= ?";
-        $stmt_check_encontros = mysqli_prepare($conexao, $sql_check_encontros);
-        mysqli_stmt_bind_param($stmt_check_encontros, 'is', $id_turma, $data_recalculo);
-        mysqli_stmt_execute($stmt_check_encontros);
-        $result_check_encontros = mysqli_stmt_get_result($stmt_check_encontros);
-        $row_check = mysqli_fetch_assoc($result_check_encontros);
-        
-        error_log("Encontros futuros encontrados: " . $row_check['total']);
-        
-        if ($row_check['total'] > 0) {
-            // Cancelar encontros futuros a partir da data de recálculo
-            $sql_cancel = "UPDATE turma_encontros 
-                          SET status = 'cancelado' 
-                          WHERE id_turma = ? 
-                          AND status = 'marcado' 
-                          AND data >= ?";
-            
-            $stmt_cancel = mysqli_prepare($conexao, $sql_cancel);
-            if (!$stmt_cancel) {
-                throw new Exception("Erro prepare cancel: " . mysqli_error($conexao));
-            }
-            
-            mysqli_stmt_bind_param($stmt_cancel, 'is', $id_turma, $data_recalculo);
-            
-            if (!mysqli_stmt_execute($stmt_cancel)) {
-                throw new Exception("Erro ao cancelar encontros: " . mysqli_stmt_error($stmt_cancel));
-            }
-            
-            error_log("Encontros cancelados: " . mysqli_stmt_affected_rows($stmt_cancel));
+
+    // ---------- 3) Recalcular encontros (se solicitado) ----------
+    if (!empty($data_recalculo) && $dias_semana > 0) {
+
+        // Buscar encontros futuros marcados dessa turma a partir da data_recalculo
+        $sql_verificar_encontros = "
+            SELECT id_encontro, data
+            FROM turma_encontros
+            WHERE id_turma = ?
+              AND data >= ?
+              AND status = 'marcado'
+            ORDER BY data
+        ";
+        $stmt_verificar = mysqli_prepare($conexao, $sql_verificar_encontros);
+        if (!$stmt_verificar) {
+            throw new Exception("Erro prepare verificar encontros: " . mysqli_error($conexao));
         }
-        
-        // Gerar novos encontros apenas se tiver dias selecionados
+
+        mysqli_stmt_bind_param($stmt_verificar, 'is', $id_turma, $data_recalculo);
+        mysqli_stmt_execute($stmt_verificar);
+        $result_verificar = mysqli_stmt_get_result($stmt_verificar);
+
+        // Map: data => id_encontro (existentes marcados)
+        $encontros_existentes = [];
+        while ($row = mysqli_fetch_assoc($result_verificar)) {
+            $encontros_existentes[$row['data']] = (int)$row['id_encontro'];
+        }
+
+        // Converter bitmask para array (1..5)
+        $dias_numeros_array = [];
+        if ($dias_semana & 1)  $dias_numeros_array[] = 1;
+        if ($dias_semana & 2)  $dias_numeros_array[] = 2;
+        if ($dias_semana & 4)  $dias_numeros_array[] = 3;
+        if ($dias_semana & 8)  $dias_numeros_array[] = 4;
+        if ($dias_semana & 16) $dias_numeros_array[] = 5;
+
         $horas_por_encontro = ($turno === 'noite') ? 3 : 4;
-        $total_encontros = ceil($carga_horaria / $horas_por_encontro);
-        
-        error_log("Horas por encontro: $horas_por_encontro, Total encontros: $total_encontros");
-        
-        // Converter bitmask para array de dias da semana (1=seg, 2=ter, etc)
-        $dias_numeros = [];
-        if ($dias_semana & 1) $dias_numeros[] = 1; // seg
-        if ($dias_semana & 2) $dias_numeros[] = 2; // ter
-        if ($dias_semana & 4) $dias_numeros[] = 3; // qua
-        if ($dias_semana & 8) $dias_numeros[] = 4; // qui
-        if ($dias_semana & 16) $dias_numeros[] = 5; // sex
-        
-        if (empty($dias_numeros)) {
-            error_log("Nenhum dia da semana selecionado. Pulando geração de encontros.");
-        } else {
-            // Calcular datas a partir da data de recálculo
-            $datas_geradas = [];
-            $data_atual = new DateTime($data_recalculo);
-            $count = 0;
-            $max_iteracoes = 365 * 2; // 2 anos máximo
-            
-            while (count($datas_geradas) < $total_encontros && $count < $max_iteracoes) {
-                $dia_semana_numero = (int)$data_atual->format('N'); // 1=seg, 7=dom
-                
-                if (in_array($dia_semana_numero, $dias_numeros)) {
-                    $datas_geradas[] = $data_atual->format('Y-m-d');
-                }
-                
-                $data_atual->modify('+1 day');
-                $count++;
+        $total_encontros = (int)ceil($carga_horaria / $horas_por_encontro);
+
+        // Gerar datas novas
+        $datas_geradas = [];
+        $data_atual = new DateTime($data_recalculo);
+        $count = 0;
+        $max_iteracoes = 365 * 3;
+
+        while (count($datas_geradas) < $total_encontros && $count < $max_iteracoes) {
+            $dia_semana_numero = (int)$data_atual->format('N');
+            if (in_array($dia_semana_numero, $dias_numeros_array, true)) {
+                $datas_geradas[] = $data_atual->format('Y-m-d');
             }
-            
-            error_log("Datas geradas: " . count($datas_geradas));
-            
-            if (!empty($datas_geradas)) {
-                // Inserir novos encontros
-                $sql_inserir = "INSERT INTO turma_encontros (id_turma, id_sala, id_professor, data, turno, horas, status) 
-                               VALUES (?, ?, ?, ?, ?, ?, 'marcado')";
-                $stmt_inserir = mysqli_prepare($conexao, $sql_inserir);
-                
-                if (!$stmt_inserir) {
-                    throw new Exception("Erro prepare insert: " . mysqli_error($conexao));
+            $data_atual->modify('+1 day');
+            $count++;
+        }
+
+        if (count($datas_geradas) === 0) {
+            throw new Exception("Não foi possível gerar datas com os dias/turno informados.");
+        }
+
+        // IMPORTANTÍSSIMO: guardar as datas que já tinham encontro "marcado" e foram atualizadas
+        $datas_ja_existiam = [];
+
+        // 3.1 Atualizar encontros existentes nas mesmas datas (e remover da lista de cancelamento)
+        $sql_atualizar_encontro = "
+            UPDATE turma_encontros
+            SET id_sala = NULLIF(?, 0),
+                id_professor = NULLIF(?, 0),
+                turno = ?,
+                horas = ?
+            WHERE id_encontro = ?
+        ";
+        $stmt_atualizar = mysqli_prepare($conexao, $sql_atualizar_encontro);
+        if (!$stmt_atualizar) {
+            throw new Exception("Erro prepare atualizar encontro: " . mysqli_error($conexao));
+        }
+
+        foreach ($datas_geradas as $i => $data_str) {
+            // horas: último encontro pode ter horas diferentes
+            $horas = ($i === $total_encontros - 1)
+                ? max(1, $carga_horaria - (($total_encontros - 1) * $horas_por_encontro))
+                : $horas_por_encontro;
+
+            if (isset($encontros_existentes[$data_str])) {
+                $id_encontro_existente = $encontros_existentes[$data_str];
+
+                // marca como "já existia"
+                $datas_ja_existiam[$data_str] = true;
+
+                mysqli_stmt_bind_param(
+                    $stmt_atualizar,
+                    'iisii',
+                    $id_sala,
+                    $id_professor,
+                    $turno,
+                    $horas,
+                    $id_encontro_existente
+                );
+
+                if (!mysqli_stmt_execute($stmt_atualizar)) {
+                    throw new Exception("Erro ao atualizar encontro existente: " . mysqli_stmt_error($stmt_atualizar));
                 }
-                
-                foreach ($datas_geradas as $i => $data) {
-                    // Calcular horas para o último encontro
-                    if ($i === count($datas_geradas) - 1) {
-                        $horas = $carga_horaria - (($total_encontros - 1) * $horas_por_encontro);
-                    } else {
-                        $horas = $horas_por_encontro;
+
+                // remove para sobrar apenas os que serão cancelados
+                unset($encontros_existentes[$data_str]);
+            }
+        }
+
+        // 3.2 Cancelar encontros que sobraram (existiam, mas não batem mais com as novas datas)
+        if (!empty($encontros_existentes)) {
+            $ids_para_cancelar = array_values($encontros_existentes);
+            $ids_para_cancelar = array_map('intval', $ids_para_cancelar);
+            $ids_str = implode(',', $ids_para_cancelar);
+            $sql_cancelar = "UPDATE turma_encontros SET status = 'cancelado' WHERE id_encontro IN ($ids_str)";
+            if (!mysqli_query($conexao, $sql_cancelar)) {
+                throw new Exception("Erro ao cancelar encontros: " . mysqli_error($conexao));
+            }
+        }
+
+        // 3.3 Criar encontros para datas que não existiam antes
+        // (aqui é onde antes você duplicava e quebrava tudo)
+        $sql_verificar_cancelado = "
+            SELECT id_encontro
+            FROM turma_encontros
+            WHERE id_turma = ?
+              AND data = ?
+              AND status = 'cancelado'
+            LIMIT 1
+        ";
+        $stmt_verificar_cancelado = mysqli_prepare($conexao, $sql_verificar_cancelado);
+        if (!$stmt_verificar_cancelado) {
+            throw new Exception("Erro prepare verificar cancelado: " . mysqli_error($conexao));
+        }
+
+        $sql_reusar_cancelado = "
+            UPDATE turma_encontros
+            SET id_sala = NULLIF(?, 0),
+                id_professor = NULLIF(?, 0),
+                turno = ?,
+                horas = ?,
+                status = 'marcado'
+            WHERE id_encontro = ?
+        ";
+        $stmt_reusar_cancelado = mysqli_prepare($conexao, $sql_reusar_cancelado);
+        if (!$stmt_reusar_cancelado) {
+            throw new Exception("Erro prepare reusar cancelado: " . mysqli_error($conexao));
+        }
+
+        $sql_inserir = "
+            INSERT INTO turma_encontros
+                (id_turma, id_sala, id_professor, data, turno, horas, status)
+            VALUES
+                (?, NULLIF(?,0), NULLIF(?,0), ?, ?, ?, 'marcado')
+        ";
+        $stmt_inserir = mysqli_prepare($conexao, $sql_inserir);
+        if (!$stmt_inserir) {
+            throw new Exception("Erro prepare inserir encontro: " . mysqli_error($conexao));
+        }
+
+        foreach ($datas_geradas as $i => $data_str) {
+            // se já existia e foi atualizado, NÃO inserir
+            if (isset($datas_ja_existiam[$data_str])) {
+                continue;
+            }
+
+            $horas = ($i === $total_encontros - 1)
+                ? max(1, $carga_horaria - (($total_encontros - 1) * $horas_por_encontro))
+                : $horas_por_encontro;
+
+            // tentar reusar cancelado
+            mysqli_stmt_bind_param($stmt_verificar_cancelado, 'is', $id_turma, $data_str);
+            mysqli_stmt_execute($stmt_verificar_cancelado);
+            $res_cancelado = mysqli_stmt_get_result($stmt_verificar_cancelado);
+
+            if ($row_cancelado = mysqli_fetch_assoc($res_cancelado)) {
+                $id_encontro_cancelado = (int)$row_cancelado['id_encontro'];
+
+                mysqli_stmt_bind_param(
+                    $stmt_reusar_cancelado,
+                    'iisii',
+                    $id_sala,
+                    $id_professor,
+                    $turno,
+                    $horas,
+                    $id_encontro_cancelado
+                );
+                if (!mysqli_stmt_execute($stmt_reusar_cancelado)) {
+                    throw new Exception("Erro ao reativar encontro cancelado: " . mysqli_stmt_error($stmt_reusar_cancelado));
+                }
+            } else {
+                // inserir novo
+                mysqli_stmt_bind_param(
+                    $stmt_inserir,
+                    'iiissi',
+                    $id_turma,
+                    $id_sala,
+                    $id_professor,
+                    $data_str,
+                    $turno,
+                    $horas
+                );
+
+                if (!mysqli_stmt_execute($stmt_inserir)) {
+                    // se der duplicata, provavelmente tem conflito de UNIQUE/índice
+                    if (mysqli_errno($conexao) == 1062) {
+                        throw new Exception(
+                            "Conflito detectado: a data $data_str já existe/está ocupada. " .
+                            "Escolha outra data de recálculo ou ajuste os dias."
+                        );
                     }
-                    
-                    // Para atividade externa, id_sala pode ser NULL
-                    $id_sala_insert = $atividade_externa ? null : $id_sala;
-                    
-                    // Bind dos parâmetros
-                    mysqli_stmt_bind_param($stmt_inserir, 'iiissi', 
-                        $id_turma, 
-                        $id_sala_insert,
-                        $id_professor,
-                        $data,
-                        $turno,
-                        $horas
-                    );
-                    
-                    if (!mysqli_stmt_execute($stmt_inserir)) {
-                        throw new Exception("Erro ao inserir encontro: " . mysqli_stmt_error($stmt_inserir));
-                    }
-                    
-                    error_log("Encontro inserido: $data com $horas horas");
+                    throw new Exception("Erro ao inserir encontro: " . mysqli_stmt_error($stmt_inserir));
                 }
             }
         }
     }
-    
-    // Commit da transação
+
     mysqli_commit($conexao);
-    error_log("Transação commitada com sucesso");
-    
-    $_SESSION['sucesso'] = "Turma atualizada com sucesso!";
-    
+    redirectWithSuccess("Turma atualizada com sucesso!");
+
 } catch (Exception $e) {
-    // Rollback em caso de erro
     mysqli_rollback($conexao);
-    error_log("ERRO na transação: " . $e->getMessage());
-    $_SESSION['erro'] = "Erro ao atualizar turma: " . $e->getMessage();
+    redirectWithError("Erro ao atualizar turma: " . $e->getMessage());
 }
-
-// Debug: verificar estado da sessão
-error_log("Sessão ao final: sucesso=" . ($_SESSION['sucesso'] ?? 'null') . ", erro=" . ($_SESSION['erro'] ?? 'null'));
-
-header("Location: ../Paginas/turmas.php");
-exit;
-?>
