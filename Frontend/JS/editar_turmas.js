@@ -399,7 +399,7 @@ function formatarNomeDia(dia) {
         const diasSet = new Set(dados.dias_semana.map(d => diasMap[d]));
         const dataAtual = new Date(dados.data_recalculo + 'T12:00:00'); // Meio-dia para evitar problemas de fuso
         let count = 0;
-        const maxTentativas = totalEncontros * 14; // Máximo 14 semanas de busca
+        const maxTentativas = 365 * 3; 
         
         while (datasGeradas.length < totalEncontros && count < maxTentativas) {
             const diaSemana = dataAtual.getDay(); // 0=domingo, 1=segunda, ..., 6=sábado

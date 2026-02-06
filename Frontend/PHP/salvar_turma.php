@@ -1,7 +1,21 @@
 <?php
 require __DIR__ . "/conexao.php";
+require __DIR__ . "/FeriadosNacionais.php";
+
 
 // helpers
+
+function isHoliday(DateTime $dt, array &$cacheByYear): bool {
+  $year = (int)$dt->format('Y');
+  if (!isset($cacheByYear[$year])) {
+    $feriados = FeriadosNacionais::getFeriadosAno($year);
+    $set = [];
+    foreach ($feriados as $f) $set[$f['data']] = true;
+    $cacheByYear[$year] = $set;
+  }
+  return isset($cacheByYear[$year][$dt->format('Y-m-d')]);
+}
+
 function dayToBit($n) {
   return match($n) {
     1 => 1, 2 => 2, 3 => 4, 4 => 8, 5 => 16, 6 => 32, 7 => 64
@@ -79,11 +93,16 @@ $id_professor,
 
   $maxDias = 366 * 3;
   $tentativas = 0;
+  $feriadosCache = [];
 
   while ($encontrosCriados < $totalEncontros) {
     if (++$tentativas > $maxDias) throw new Exception("Falha ao gerar datas (verifique dias/data início).");
 
     if (isDaySelected($diasMask, $dt)) {
+      if (isHoliday($dt, $feriadosCache)) {
+      $dt->modify('+1 day');
+      continue; // <- empurra pra frente
+    }
       $dataStr = $dt->format('Y-m-d');
 
       $restante = $carga_horaria - ($encontrosCriados * $horasPorEncontro);

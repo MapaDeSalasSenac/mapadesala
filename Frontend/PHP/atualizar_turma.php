@@ -1,11 +1,10 @@
 <?php
-// atualizar_turma.php - VERSÃO CORRIGIDA (sem duplicar encontros + bind dinâmico seguro)
-
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require "conexao.php";
+require __DIR__ . "/FeriadosNacionais.php";
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -22,6 +21,30 @@ function redirectWithSuccess(string $msg): void {
     header("Location: ../Paginas/turmas.php");
     exit;
 }
+
+/**
+ * Verifica se uma data cai em feriado nacional (fixo ou móvel),
+ * usando cache por ano pra não recalcular toda hora.
+ */
+function isHoliday(DateTime $dt, array &$cacheByYear): bool {
+    $year = (int)$dt->format('Y');
+
+    if (!isset($cacheByYear[$year])) {
+        $feriados = FeriadosNacionais::getFeriadosAno($year);
+
+        // vira um "set" (array associativo) pra lookup O(1)
+        $set = [];
+        foreach ($feriados as $f) {
+            if (!empty($f['data'])) {
+                $set[$f['data']] = true; // 'YYYY-mm-dd' => true
+            }
+        }
+        $cacheByYear[$year] = $set;
+    }
+
+    return isset($cacheByYear[$year][$dt->format('Y-m-d')]);
+}
+
 
 /**
  * bind dinâmico seguro (por referência)
@@ -141,14 +164,22 @@ try {
             $count = 0;
             $max_iteracoes = 365 * 3; // trava segurança
 
+            $feriadosCache = []; // cache por ano
+
             while (count($datas_a_verificar) < $total_encontros && $count < $max_iteracoes) {
                 $dia_semana_numero = (int)$data_atual->format('N'); // 1..7
+
                 if (in_array($dia_semana_numero, $dias_numeros_array, true)) {
-                    $datas_a_verificar[] = $data_atual->format('Y-m-d');
+                    // PULA feriado: não entra na lista de verificação
+                    if (!isHoliday($data_atual, $feriadosCache)) {
+                        $datas_a_verificar[] = $data_atual->format('Y-m-d');
+                    }
                 }
+
                 $data_atual->modify('+1 day');
                 $count++;
             }
+
 
             if (!empty($datas_a_verificar)) {
                 $placeholders = implode(',', array_fill(0, count($datas_a_verificar), '?'));
@@ -323,14 +354,22 @@ try {
         $count = 0;
         $max_iteracoes = 365 * 3;
 
+        $feriadosCache = []; // cache por ano
+
         while (count($datas_geradas) < $total_encontros && $count < $max_iteracoes) {
             $dia_semana_numero = (int)$data_atual->format('N');
+
             if (in_array($dia_semana_numero, $dias_numeros_array, true)) {
-                $datas_geradas[] = $data_atual->format('Y-m-d');
+                // PULA feriado: não gera encontro no feriado (vai "prolongar" o curso)
+                if (!isHoliday($data_atual, $feriadosCache)) {
+                    $datas_geradas[] = $data_atual->format('Y-m-d');
+                }
             }
+
             $data_atual->modify('+1 day');
             $count++;
         }
+
 
         if (count($datas_geradas) === 0) {
             throw new Exception("Não foi possível gerar datas com os dias/turno informados.");
