@@ -51,6 +51,9 @@ body{
   height:50px;
   border-radius:50%;
   cursor:pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* botão menu (só mobile) */
