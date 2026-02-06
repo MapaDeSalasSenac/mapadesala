@@ -966,3 +966,39 @@ body.no-scroll{
   .acoes-modal{ flex-direction:column; }
   .botao{ width:100%; }
 }
+
+
+/* =====================================================
+   TOAST (sucesso/erro) — usado após redirect do PHP
+===================================================== */
+.toast{
+  position: fixed;
+  right: 18px;
+  top: 70px; /* abaixo do header */
+  z-index: 5000;
+  min-width: 220px;
+  max-width: min(420px, calc(100vw - 36px));
+  padding: 12px 14px;
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(0,0,0,.18);
+  font-weight: 700;
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+.toast.is-show{
+  opacity: 1;
+  transform: translateY(0);
+}
+.toast--success{
+  background: rgba(20, 150, 70, .95);
+  color: #fff;
+}
+.toast--error{
+  background: rgba(200, 45, 45, .95);
+  color: #fff;
+}
+@media (max-width:767px){
+  .toast{ left: 14px; right: 14px; top: 62px; }
+}

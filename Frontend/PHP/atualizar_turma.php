@@ -219,12 +219,13 @@ try {
                     }
 
                     if (!empty($conflitos_prof)) {
-                        $datas_conflito = array_column($conflitos_prof, 'data');
-                        $turmas_conflito = array_column($conflitos_prof, 'nome_turma');
+                        $itens = [];
+                        foreach ($conflitos_prof as $c) {
+                            $itens[] = ($c['data'] ?? '?') . " (" . ($c['nome_turma'] ?? 'turma') . ")";
+                        }
                         throw new Exception(
-                            "Conflito de professor: já alocado nas datas: " .
-                            implode(', ', $datas_conflito) .
-                            " (Turmas: " . implode(', ', $turmas_conflito) . ")"
+                            "Conflito de PROFESSOR: o professor selecionado já está ocupado no turno '{$turno}' em: " .
+                            implode(', ', $itens)
                         );
                     }
                 }
@@ -263,12 +264,13 @@ try {
                     }
 
                     if (!empty($conflitos_sala)) {
-                        $datas_conflito = array_column($conflitos_sala, 'data');
-                        $turmas_conflito = array_column($conflitos_sala, 'nome_turma');
+                        $itens = [];
+                        foreach ($conflitos_sala as $c) {
+                            $itens[] = ($c['data'] ?? '?') . " (" . ($c['nome_turma'] ?? 'turma') . ")";
+                        }
                         throw new Exception(
-                            "Conflito de sala: já ocupada nas datas: " .
-                            implode(', ', $datas_conflito) .
-                            " (Turmas: " . implode(', ', $turmas_conflito) . ")"
+                            "Conflito de SALA: a sala selecionada já está ocupada no turno '{$turno}' em: " .
+                            implode(', ', $itens)
                         );
                     }
                 }

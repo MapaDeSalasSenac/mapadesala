@@ -910,6 +910,19 @@
   background: linear-gradient(135deg, #ef4444, #dc2626);
 }
 
+/* Legenda do modo sala específica (mês) */
+.bolinha-legenda.livre {
+  background: rgba(22,163,74,.85);
+}
+
+.bolinha-legenda.ocupada {
+  background: rgba(220,38,38,.85);
+}
+
+.bolinha-legenda.apagado {
+  background: rgba(156,163,175,.9);
+}
+
 .mini-barras-turnos {
   display: flex;
   gap: 2px;
@@ -1078,4 +1091,56 @@
 
 .celula-dia:hover .mini-barra.alta {
   box-shadow: 0 0 4px rgba(239, 68, 68, 0.6);
+}
+/* container das 3 barras */
+.mini-barras-turnos{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+/* cada barra */
+.mini-barra{
+  height: 6px;
+  border-radius: 999px;
+  position: relative;
+}
+
+/* legenda pequena embaixo: M T N */
+.mini-barras-turnos::after{
+  /* Removido: letras M/T/N estavam poluindo visual */
+  content: "";
+  display: none;
+}
+
+/* ==============================
+   MODO SALA ESPECÍFICA (MÊS)
+   - No filtro por sala, as mini-barras usam as classes
+     .livre / .ocupada / .apagado.
+   - Sem isso, elas ficam sem cor e parecem “quebradas”.
+   ============================== */
+
+/* Livre (verde) */
+.mini-barra.livre{
+  background: rgba(22,163,74,.25);
+  border: 1px solid rgba(22,163,74,.20);
+}
+
+/* Ocupada (vermelho) */
+.mini-barra.ocupada{
+  background: rgba(220,38,38,.25);
+  border: 1px solid rgba(220,38,38,.20);
+}
+
+/* Apagado / desabilitado */
+.mini-barra.apagado{
+  background: rgba(156,163,175,.22);
+  border: 1px solid rgba(0,0,0,.04);
+  opacity: .6;
+}
+
+/* Quando um turno está desabilitado, mantenha a grade mas “mute” */
+.mini-barras-turnos.sala-especifica .mini-barra.apagado{
+  opacity: .35;
 }

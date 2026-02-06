@@ -8,23 +8,24 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
   exit;
 }
 
-$nomeSala  = trim($_POST["nomeSala"] ?? "");
-$capacidade = (int)($_POST["capacidade"] ?? 0);
+$id = (int)($_POST['id_sala'] ?? 0);
+$nome = trim($_POST['nomeSala'] ?? "");
+$cap = (int)($_POST['capacidade'] ?? 0);
 
-if ($nomeSala === "" || $capacidade <= 0) {
-  $_SESSION['erro'] = "Preencha nome e capacidade corretamente.";
+if ($id <= 0 || $nome === "" || $cap <= 0) {
+  $_SESSION['erro'] = "Dados inválidos para editar sala.";
   header('Location: ../Paginas/salas.php');
   exit;
 }
 
-$sql = "INSERT INTO salas (nome_sala, capacidade) VALUES (?, ?)";
+$sql = "UPDATE salas SET nome_sala = ?, capacidade = ? WHERE id_sala = ?";
 $stmt = $conexao->prepare($sql);
-$stmt->bind_param("si", $nomeSala, $capacidade);
+$stmt->bind_param("sii", $nome, $cap, $id);
 
 if ($stmt->execute()) {
-  $_SESSION['sucesso'] = "Sala criada com sucesso!";
+  $_SESSION['sucesso'] = "Sala atualizada!";
 } else {
-  $_SESSION['erro'] = "Erro ao criar sala.";
+  $_SESSION['erro'] = "Erro ao atualizar sala.";
 }
 
 $stmt->close();

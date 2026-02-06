@@ -61,10 +61,19 @@
     return Object.values(state.filtros.turnos).filter(Boolean).length || 0;
   }
 
+  function getSalasVisiveis(state) {
+    const salaId = String(state.filtros?.salaId ?? "all");
+    const salas = Array.isArray(state.data?.salas) ? state.data.salas : [];
+
+    if (salaId === "all") return salas;
+    return salas.filter((s) => String(s.id) === salaId);
+  }
+
   function isFiltrosPadrao(state) {
     const f = state.filtros;
     return (
       f.status === "all" &&
+      String(f.salaId ?? "all") === "all" &&
       !String(f.professor || "").trim() &&
       f.turnos.matutino &&
       f.turnos.vespertino &&
@@ -97,11 +106,10 @@
   // =======================
   function renderDay(state, util, deps) {
     const { TURNOS, getBooking, isPastTurno, isNowTurno, norm, isFeriado, getFeriadoInfo } = deps;
-    
+
     const isTodayFeriado = isFeriado(state.date);
     const feriadoInfo = getFeriadoInfo(state.date);
-    
-    // Se for feriado, mostrar mensagem especial
+
     if (isTodayFeriado && feriadoInfo) {
       return `
         <div class="vazio-painel feriado-info">
@@ -111,7 +119,7 @@
       `;
     }
 
-    const cards = state.data.salas
+    const cards = getSalasVisiveis(state)
       .map((s) => {
         const linhas = TURNOS
           .filter((t) => state.filtros.turnos[t.id])
@@ -172,7 +180,7 @@
     const dias = Array.from({ length: 7 }, (_, i) => util.shiftISO(inicio, i));
     const dow = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-    const rows = state.data.salas
+    const rows = getSalasVisiveis(state)
       .map((s) => {
         let temMatch = false;
 
@@ -181,8 +189,6 @@
             const dt = new Date(d + "T00:00:00");
             const diaNum = dt.getDate();
             const diaDow = dow[dt.getDay()];
-            
-            // Verificar se é feriado
             const ehFeriado = isFeriado(d);
 
             const bars = TURNOS
@@ -199,15 +205,15 @@
 
                 if (cls !== "apagado") temMatch = true;
 
-                return `<span class="barra-turno-semana ${cls}" title="${escapeHTML(t.rotulo)}${ehFeriado ? ' (Feriado)' : ''}"></span>`;
+                return `<span class="barra-turno-semana ${cls}" title="${escapeHTML(t.rotulo)}${ehFeriado ? " (Feriado)" : ""}"></span>`;
               })
               .join("");
 
             return `
-              <div class="card-dia-semana ${ehFeriado ? 'dia-feriado' : ''}">
+              <div class="card-dia-semana ${ehFeriado ? "dia-feriado" : ""}">
                 <div class="topo-dia-semana">
                   <span class="numero-dia-semana">${diaNum}</span>
-                  <span class="sigla-dia-semana">${diaDow}${ehFeriado ? ' 🎉' : ''}</span>
+                  <span class="sigla-dia-semana">${diaDow}${ehFeriado ? " 🎉" : ""}</span>
                 </div>
                 <div class="barras-turnos-semana">${bars}</div>
               </div>
@@ -240,22 +246,27 @@
   // =======================
   function renderPainelDia(state, deps, dateISO) {
     const { TURNOS, isFeriado, getFeriadoInfo } = deps;
-    
-    // Verificar se é feriado
+
     if (isFeriado(dateISO)) {
       const feriadoInfo = getFeriadoInfo(dateISO);
       return `
         <div class="data-painel">${formatDateBR(dateISO)}</div>
         <div class="subtitulo-painel">🎉 Feriado</div>
         <div class="vazio-painel feriado-info">
-          <div style="font-size: 18px; margin-bottom: 8px;">${escapeHTML(feriadoInfo?.nome || 'Feriado')}</div>
+          <div style="font-size: 18px; margin-bottom: 8px;">${escapeHTML(feriadoInfo?.nome || "Feriado")}</div>
           <div>Não há aulas programadas para este dia</div>
         </div>
       `;
     }
 
     const salasById = new Map(state.data.salas.map((s) => [s.id, s]));
-    const ag = state.data.agendamentos.filter((a) => a.data === dateISO);
+
+    const salaIdFiltro = String(state.filtros?.salaId ?? "all");
+    const ag = state.data.agendamentos.filter((a) => {
+      if (a.data !== dateISO) return false;
+      if (salaIdFiltro === "all") return true;
+      return String(a.salaId) === salaIdFiltro;
+    });
 
     if (!ag.length) {
       return `
@@ -292,168 +303,228 @@
   }
 
   function renderMonth(state, util, deps) {
-  const { TURNOS, isFeriado, getFeriadoInfo } = deps;
-  
-  if (!state.monthCursorISO) state.monthCursorISO = util.startOfMonthISO(state.date);
-  if (!state.monthSelectedDate) state.monthSelectedDate = state.date;
+    const { TURNOS, isFeriado, getFeriadoInfo } = deps;
 
-  const first = state.monthCursorISO;
-  const { gridDays } = util.monthGrid(first);
+    if (!state.monthCursorISO) state.monthCursorISO = util.startOfMonthISO(state.date);
+    if (!state.monthSelectedDate) state.monthSelectedDate = state.date;
 
-  const titulo = new Date(first + "T00:00:00").toLocaleString("pt-BR", { month: "long", year: "numeric" });
+    const first = state.monthCursorISO;
+    const { gridDays } = util.monthGrid(first);
 
-  const head = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((x) => `<div>${x}</div>`).join("");
+    const titulo = new Date(first + "T00:00:00").toLocaleString("pt-BR", { month: "long", year: "numeric" });
+    const head = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((x) => `<div>${x}</div>`).join("");
 
-  // Identificar salas físicas (não externas)
-  const salasFisicasIds = new Set();
-  state.data.salas.forEach(sala => {
-    if (!sala.nome.toLowerCase().includes('externo') && 
-        !sala.nome.toLowerCase().includes('externa') &&
-        !sala.tipo?.toLowerCase().includes('externo')) {
-      salasFisicasIds.add(sala.id);
-    }
-  });
+    // ✅ Sala selecionada (quando o filtro de sala estiver ativo)
+    const salaSelecionadaId = String(state.filtros?.salaId ?? "all");
+    const salaSelecionada =
+      salaSelecionadaId === "all"
+        ? null
+        : (Array.isArray(state.data?.salas) ? state.data.salas : []).find((s) => String(s.id) === salaSelecionadaId);
 
-  const totalSalasFisicas = salasFisicasIds.size;
+    // Identificar salas físicas (não externas)
+    const salasFisicasIds = new Set();
+    state.data.salas.forEach((sala) => {
+      const nome = String(sala.nome || "").toLowerCase();
+      const tipo = String(sala.tipo || "").toLowerCase();
 
-  // Função auxiliar para contar ocupação POR TURNO
-  function contarOcupacaoPorTurno(dataISO) {
-    const ocupacaoPorTurno = {
-      matutino: 0,
-      vespertino: 0,
-      noturno: 0
-    };
-    
-    const slotsOcupados = new Set();
-    
-    for (const a of state.data.agendamentos) {
-      if (a.data === dataISO && salasFisicasIds.has(a.salaId)) {
-        const slotKey = `${a.salaId}|${a.turno}`;
-        if (!slotsOcupados.has(slotKey)) {
-          slotsOcupados.add(slotKey);
-          ocupacaoPorTurno[a.turno]++;
+      if (!nome.includes("externo") && !nome.includes("externa") && !tipo.includes("externo")) {
+        salasFisicasIds.add(sala.id);
+      }
+    });
+    const totalSalasFisicas = salasFisicasIds.size;
+
+    function contarOcupacaoPorTurno(dataISO) {
+      const ocupacaoPorTurno = { matutino: 0, vespertino: 0, noturno: 0 };
+      const slotsOcupados = new Set();
+
+      for (const a of state.data.agendamentos) {
+        if (a.data === dataISO && salasFisicasIds.has(a.salaId)) {
+          const slotKey = `${a.salaId}|${a.turno}`;
+          if (!slotsOcupados.has(slotKey)) {
+            slotsOcupados.add(slotKey);
+            ocupacaoPorTurno[a.turno]++;
+          }
         }
       }
+      return ocupacaoPorTurno;
     }
-    
-    return ocupacaoPorTurno;
-  }
 
-  // Função para determinar cor do turno
-  function getCorTurno(ocupados, totalSalas) {
-    const pct = totalSalas ? (ocupados / totalSalas) * 100 : 0;
-    
-    if (pct >= 70) return "alta";      // Vermelho
-    if (pct >= 30) return "media";     // Amarelo
-    return "baixa";                    // Verde
-  }
+    function getCorTurno(ocupados, totalSalas) {
+      const pct = totalSalas ? (ocupados / totalSalas) * 100 : 0;
+      if (pct >= 70) return "alta";
+      if (pct >= 30) return "media";
+      return "baixa";
+    }
 
-  const cells = gridDays.map((d) => {
-    const fora = d.slice(0, 7) !== first.slice(0, 7) ? " fora-mes" : "";
-    const sel = d === state.monthSelectedDate ? " selecionado" : "";
-    const feriado = isFeriado(d) ? " feriado" : "";
-    
-    const dayNum = new Date(d + "T00:00:00").getDate();
-    
-    if (isFeriado(d)) {
-      const feriadoInfo = getFeriadoInfo(d);
-      return `
-        <button type="button" class="celula-dia${fora}${sel}${feriado}" data-date="${d}" disabled>
-          <div class="numero-dia">${dayNum}</div>
-          <div class="etiqueta-feriado" title="${feriadoInfo ? escapeHTML(feriadoInfo.nome) : 'Feriado'}">
-            🎉 ${feriadoInfo ? escapeHTML(feriadoInfo.nome.substring()) : 'Feriado'}
+    const rotuloTurnoCurto = (t) =>
+      t === "matutino" ? "Manhã" : t === "vespertino" ? "Tarde" : "Noite";
+
+    const cells = gridDays
+      .map((d) => {
+        const fora = d.slice(0, 7) !== first.slice(0, 7) ? " fora-mes" : "";
+        const sel = d === state.monthSelectedDate ? " selecionado" : "";
+
+        const dayNum = new Date(d + "T00:00:00").getDate();
+
+        // Feriado (sempre desabilita)
+        if (isFeriado(d)) {
+          const feriadoInfo = getFeriadoInfo(d);
+          return `
+            <button type="button" class="celula-dia${fora}${sel} feriado" data-date="${d}" disabled>
+              <div class="numero-dia">${dayNum}</div>
+              <div class="etiqueta-feriado" title="${feriadoInfo ? escapeHTML(feriadoInfo.nome) : "Feriado"}">
+                🎉 ${feriadoInfo ? escapeHTML(feriadoInfo.nome) : "Feriado"}
+              </div>
+            </button>
+          `;
+        }
+
+        // ✅ MODO: SALA ESPECÍFICA
+        if (salaSelecionada) {
+          const turnos = ["matutino", "vespertino", "noturno"];
+
+          const bars = turnos
+            .map((t) => {
+              const habilitado = !!state.filtros.turnos[t];
+
+              const booking = (state.data.agendamentos || []).find(
+                (a) =>
+                  String(a.salaId) === String(salaSelecionada.id) &&
+                  a.data === d &&
+                  a.turno === t
+              );
+
+              const clsBase = booking ? "ocupada" : "livre";
+              const cls = habilitado ? clsBase : "apagado";
+
+              const statusTxt = booking ? "Ocupada" : "Livre";
+
+              // ✅ inclui turno na classe (matutino/vespertino/noturno)
+              return `<div class="mini-barra ${t} ${cls}" data-turno="${t}" title="${rotuloTurnoCurto(t)}: ${statusTxt}"></div>`;
+            })
+            .join("");
+
+          return `
+            <button type="button" class="celula-dia${fora}${sel}" data-date="${d}">
+              <div class="numero-dia">${dayNum}</div>
+              <div class="mini-barras-turnos sala-especifica">
+                ${bars}
+              </div>
+            </button>
+          `;
+        }
+
+        // ✅ MODO: GERAL (todas as salas físicas)
+        const ocupacao = contarOcupacaoPorTurno(d);
+
+        const corManha = getCorTurno(ocupacao.matutino, totalSalasFisicas);
+        const corTarde = getCorTurno(ocupacao.vespertino, totalSalasFisicas);
+        const corNoite = getCorTurno(ocupacao.noturno, totalSalasFisicas);
+
+        const pctManha = totalSalasFisicas ? Math.round((ocupacao.matutino / totalSalasFisicas) * 100) : 0;
+        const pctTarde = totalSalasFisicas ? Math.round((ocupacao.vespertino / totalSalasFisicas) * 100) : 0;
+        const pctNoite = totalSalasFisicas ? Math.round((ocupacao.noturno / totalSalasFisicas) * 100) : 0;
+
+        const miniBarras = `
+          <div class="mini-barras-turnos">
+            <div class="mini-barra matutino ${corManha}" data-turno="matutino" data-ocupados="${ocupacao.matutino}" data-total="${totalSalasFisicas}" data-pct="${pctManha}"></div>
+            <div class="mini-barra vespertino ${corTarde}" data-turno="vespertino" data-ocupados="${ocupacao.vespertino}" data-total="${totalSalasFisicas}" data-pct="${pctTarde}"></div>
+            <div class="mini-barra noturno ${corNoite}" data-turno="noturno" data-ocupados="${ocupacao.noturno}" data-total="${totalSalasFisicas}" data-pct="${pctNoite}"></div>
           </div>
-        </button>
+        `;
+
+        const contadores = `
+          <div class="contadores-turnos">
+            <div class="contador-turno matutino" data-cor="${corManha}">
+              <span class="contador-numero">${ocupacao.matutino}</span>
+              <span class="contador-porcento">${pctManha}%</span>
+            </div>
+            <div class="contador-turno vespertino" data-cor="${corTarde}">
+              <span class="contador-numero">${ocupacao.vespertino}</span>
+              <span class="contador-porcento">${pctTarde}%</span>
+            </div>
+            <div class="contador-turno noturno" data-cor="${corNoite}">
+              <span class="contador-numero">${ocupacao.noturno}</span>
+              <span class="contador-porcento">${pctNoite}%</span>
+            </div>
+          </div>
+        `;
+
+        return `
+          <button type="button" class="celula-dia${fora}${sel}" data-date="${d}"
+            title="Manhã: ${ocupacao.matutino}/${totalSalasFisicas} (${pctManha}%) | Tarde: ${ocupacao.vespertino}/${totalSalasFisicas} (${pctTarde}%) | Noite: ${ocupacao.noturno}/${totalSalasFisicas} (${pctNoite}%)">
+            <div class="numero-dia">${dayNum}</div>
+            ${miniBarras}
+            ${contadores}
+          </button>
+        `;
+      })
+      .join("");
+
+    const legenda = salaSelecionada
+      ? `
+        <div class="legenda-ocupacao legenda-sala-especifica">
+          <div class="item-legenda">
+            <span class="bolinha-legenda livre"></span>
+            Livre
+          </div>
+          <div class="item-legenda">
+            <span class="bolinha-legenda ocupada"></span>
+            Ocupada
+          </div>
+          <div class="item-legenda">
+            <span class="bolinha-legenda apagado"></span>
+            Turno desativado
+          </div>
+          <div class="item-legenda" style="margin-left: auto;">
+            <span style="font-size: 14px; color: #6b7280;">
+              Sala: ${escapeHTML(salaSelecionada.nome)}
+            </span>
+          </div>
+        </div>
+      `
+      : `
+        <div class="legenda-ocupacao">
+          <div class="item-legenda">
+            <span class="bolinha-legenda baixa"></span>
+            Baixa (0-29%)
+          </div>
+          <div class="item-legenda">
+            <span class="bolinha-legenda media"></span>
+            Média (30-69%)
+          </div>
+          <div class="item-legenda">
+            <span class="bolinha-legenda alta"></span>
+            Alta (70-100%)
+          </div>
+          <div class="item-legenda" style="margin-left: auto;">
+            <span style="font-size: 10px; color: #6b7280;">
+              ${totalSalasFisicas} salas físicas
+            </span>
+          </div>
+        </div>
       `;
-    }
-    
-    const ocupacao = contarOcupacaoPorTurno(d);
-    const corManha = getCorTurno(ocupacao.matutino, totalSalasFisicas);
-    const corTarde = getCorTurno(ocupacao.vespertino, totalSalasFisicas);
-    const corNoite = getCorTurno(ocupacao.noturno, totalSalasFisicas);
-    
-    // Calcular porcentagens
-    const pctManha = totalSalasFisicas ? Math.round((ocupacao.matutino / totalSalasFisicas) * 100) : 0;
-    const pctTarde = totalSalasFisicas ? Math.round((ocupacao.vespertino / totalSalasFisicas) * 100) : 0;
-    const pctNoite = totalSalasFisicas ? Math.round((ocupacao.noturno / totalSalasFisicas) * 100) : 0;
-    
-    const miniBarras = `
-      <div class="mini-barras-turnos">
-        <div class="mini-barra ${corManha}" data-turno="manha" data-ocupados="${ocupacao.matutino}" data-total="${totalSalasFisicas}" data-pct="${pctManha}"></div>
-        <div class="mini-barra ${corTarde}" data-turno="tarde" data-ocupados="${ocupacao.vespertino}" data-total="${totalSalasFisicas}" data-pct="${pctTarde}"></div>
-        <div class="mini-barra ${corNoite}" data-turno="noite" data-ocupados="${ocupacao.noturno}" data-total="${totalSalasFisicas}" data-pct="${pctNoite}"></div>
-      </div>
-    `;
-    
-    // Contadores numéricos abaixo das barras
-    const contadores = `
-      <div class="contadores-turnos">
-        <div class="contador-turno manha" data-cor="${corManha}">
-          <span class="contador-numero">${ocupacao.matutino}</span>
-          <span class="contador-porcento">${pctManha}%</span>
-        </div>
-        <div class="contador-turno tarde" data-cor="${corTarde}">
-          <span class="contador-numero">${ocupacao.vespertino}</span>
-          <span class="contador-porcento">${pctTarde}%</span>
-        </div>
-        <div class="contador-turno noite" data-cor="${corNoite}">
-          <span class="contador-numero">${ocupacao.noturno}</span>
-          <span class="contador-porcento">${pctNoite}%</span>
-        </div>
-      </div>
-    `;
 
     return `
-      <button type="button" class="celula-dia${fora}${sel}" data-date="${d}" title="Manhã: ${ocupacao.matutino}/${totalSalasFisicas} (${pctManha}%) | Tarde: ${ocupacao.vespertino}/${totalSalasFisicas} (${pctTarde}%) | Noite: ${ocupacao.noturno}/${totalSalasFisicas} (${pctNoite}%)">
-        <div class="numero-dia">${dayNum}</div>
-        ${miniBarras}
-        ${contadores}
-      </button>
-    `;
-  }).join("");
+      <div class="mes-dividido">
+        <div class="mes">
+          <div class="navegacao-mes">
+            <button class="botao-navegacao-mes" type="button" data-act="month-prev">‹</button>
+            <div class="titulo-navegacao-mes">${escapeHTML(capitalize(titulo))}</div>
+            <button class="botao-navegacao-mes" type="button" data-act="month-next">›</button>
+          </div>
 
-  const legenda = `
-    <div class="legenda-ocupacao">
-      <div class="item-legenda">
-        <span class="bolinha-legenda baixa"></span>
-        Baixa (0-29%)
-      </div>
-      <div class="item-legenda">
-        <span class="bolinha-legenda media"></span>
-        Média (30-69%)
-      </div>
-      <div class="item-legenda">
-        <span class="bolinha-legenda alta"></span>
-        Alta (70-100%)
-      </div>
-      <div class="item-legenda" style="margin-left: auto;">
-        <span style="font-size: 10px; color: #6b7280;">
-          ${totalSalasFisicas} salas físicas
-        </span>
-      </div>
-    </div>
-  `;
-
-  return `
-    <div class="mes-dividido">
-      <div class="mes">
-        <div class="navegacao-mes">
-          <button class="botao-navegacao-mes" type="button" data-act="month-prev">‹</button>
-          <div class="titulo-navegacao-mes">${escapeHTML(capitalize(titulo))}</div>
-          <button class="botao-navegacao-mes" type="button" data-act="month-next">›</button>
+          <div class="cabecalho-dias-mes">${head}</div>
+          <div class="grade-dias-mes">${cells}</div>
+          ${legenda}
         </div>
 
-        <div class="cabecalho-dias-mes">${head}</div>
-        <div class="grade-dias-mes">${cells}</div>
-        ${legenda}
+        <aside class="painel-dia" data-role="painel-dia">
+          ${renderPainelDia(state, deps, state.monthSelectedDate)}
+        </aside>
       </div>
-
-      <aside class="painel-dia" data-role="painel-dia">
-        ${renderPainelDia(state, deps, state.monthSelectedDate)}
-      </aside>
-    </div>
-  `;
-}
+    `;
+  }
 
   function renderHTML(state, util, deps) {
     if (state.view === "day") return renderDay(state, util, deps);

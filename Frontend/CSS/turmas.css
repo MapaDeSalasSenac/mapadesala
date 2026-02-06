@@ -320,15 +320,44 @@ button[type="submit"]{
 button[type="button"]{
   background:#eee;
 }
-#preview{
-  margin-top:12px;
-    white-space:pre-wrap; 
-    font-family:ui-monospace, monospace;
-  }
-.warn{
-  color:#b00; font-weight:700;}
-.ok{
-  color:#070; font-weight:700;}
+#preview, #previewEditar{
+  margin-top: 12px;
+  font-family: inherit;
+  white-space: normal;
+}
+
+/* Pré-visualização (criar/editar) */
+.preview-badge{
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+.preview-badge--ok{ background: rgba(34,187,119,.12); color: #0c5; }
+.preview-badge--error{ background: rgba(187,0,0,.10); color: #b00; }
+
+.preview-meta{ margin: 10px 0; display:flex; flex-direction:column; gap:6px; }
+.preview-warn{ color:#b00; font-weight:600; }
+
+.preview-lista, .preview-list{
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.preview-linha, .preview-line{
+  padding: 8px 12px;
+  border-top: 1px solid rgba(0,0,0,.06);
+}
+.preview-linha:first-child, .preview-line:first-child{ border-top: 0; }
+.preview-linha.is-conflito, .preview-line.is-conflict{
+  background: rgba(187,0,0,.06);
+}
+.preview-tags{
+  font-weight: 700;
+  opacity: .85;
+}
+
+.warn{ color:#b00; font-weight:700; }
+.ok{ color:#070; font-weight:700; }
 .modal {
   width: 100%;
   background:none;

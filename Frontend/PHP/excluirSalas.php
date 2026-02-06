@@ -8,23 +8,22 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
   exit;
 }
 
-$nomeSala  = trim($_POST["nomeSala"] ?? "");
-$capacidade = (int)($_POST["capacidade"] ?? 0);
-
-if ($nomeSala === "" || $capacidade <= 0) {
-  $_SESSION['erro'] = "Preencha nome e capacidade corretamente.";
+$id = (int)($_POST['id_sala'] ?? 0);
+if ($id <= 0) {
+  $_SESSION['erro'] = "Sala inválida.";
   header('Location: ../Paginas/salas.php');
   exit;
 }
 
-$sql = "INSERT INTO salas (nome_sala, capacidade) VALUES (?, ?)";
+// Se houver FK, pode falhar. Mantém mensagem amigável.
+$sql = "DELETE FROM salas WHERE id_sala = ?";
 $stmt = $conexao->prepare($sql);
-$stmt->bind_param("si", $nomeSala, $capacidade);
+$stmt->bind_param("i", $id);
 
 if ($stmt->execute()) {
-  $_SESSION['sucesso'] = "Sala criada com sucesso!";
+  $_SESSION['sucesso'] = "Sala excluída!";
 } else {
-  $_SESSION['erro'] = "Erro ao criar sala.";
+  $_SESSION['erro'] = "Não foi possível excluir (pode haver turmas vinculadas).";
 }
 
 $stmt->close();

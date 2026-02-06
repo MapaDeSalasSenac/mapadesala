@@ -1,6 +1,10 @@
 <?php
 require "../PHP/conexao.php";
 
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
+$toast_sucesso = $_SESSION['sucesso'] ?? null; unset($_SESSION['sucesso']);
+$toast_erro = $_SESSION['erro'] ?? null; unset($_SESSION['erro']);
+
 // SALAS
 $salas = [];
 $q1 = mysqli_query($conexao, "SELECT id_sala, nome_sala, capacidade FROM salas ORDER BY nome_sala ASC");
@@ -80,7 +84,7 @@ $result = mysqli_query($conexao, $sql);
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="../JS/padrao.js" defer></script>
   <script src="../JS/turmas.js" defer></script>
-  <script src="../JS/editar_turmas.js" defer></script>
+  <!-- editar_turmas.js removido: estava duplicando handlers e quebrando Pré-visualizar/Cancelar -->
 </head>
 
 <body>
@@ -208,8 +212,9 @@ $result = mysqli_query($conexao, $sql);
   </main>
 
   <!-- MODAL -->
-  <div class="modal" id="meuModal">
-    <div class="modal__content">
+  <div class="modal" id="meuModal" aria-hidden="true">
+    <div class="modal__backdrop" data-close></div>
+    <div class="modal__content" role="dialog" aria-modal="true">
         <div class="modal__header">
             <h2>Adicionar Turma</h2>
             <button class="modal__close" data-close>×</button>
@@ -292,8 +297,9 @@ $result = mysqli_query($conexao, $sql);
     </div>
 </div>
 <!-- MODAL DE EDIÇÃO -->
-<div class="modal" id="modalEditar">
-    <div class="modal__content">
+<div class="modal" id="modalEditar" aria-hidden="true">
+    <div class="modal__backdrop" data-close-editar></div>
+    <div class="modal__content" role="dialog" aria-modal="true">
         <div class="modal__header">
             <h2>Editar Turma</h2>
             <button class="modal__close" data-close-editar>×</button>
@@ -379,5 +385,13 @@ $result = mysqli_query($conexao, $sql);
         </div>
     </div>
 </div>
+
+  <?php if ($toast_sucesso): ?>
+    <div class="toast toast--success" data-toast><?= htmlspecialchars($toast_sucesso) ?></div>
+  <?php endif; ?>
+  <?php if ($toast_erro): ?>
+    <div class="toast toast--error" data-toast><?= htmlspecialchars($toast_erro) ?></div>
+  <?php endif; ?>
+
 </body>
 </html>

@@ -1,6 +1,10 @@
 <?php
   require "../PHP/conexao.php";
 
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
+$toast_sucesso = $_SESSION['sucesso'] ?? null; unset($_SESSION['sucesso']);
+$toast_erro = $_SESSION['erro'] ?? null; unset($_SESSION['erro']);
+
   $sql ="SELECT nome_sala, capacidade FROM salas";
   $result = $conexao->query($sql);
 ?>
@@ -156,12 +160,12 @@
     </div>
   </div>
 
-  <div class="modal" id="modalEditar">
-    <div class="modal__backdrop" onclick="fecharModalEdicao()"></div>
+  <div class="modal" id="modalEditar" aria-hidden="true">
+    <div class="modal__backdrop" data-close></div>
     <div class="modal__content">
         <header class="modal__header">
             <h2 id="modalTitle">Editar Sala</h2>
-            <button class="modal__close" onclick="fecharModalEdicao()">×</button>
+            <button class="modal__close" aria-label="Fechar" data-close>×</button>
         </header>
 
         <div class="modal__body">
@@ -184,12 +188,12 @@
     </div>
 </div>
 
-<div class="modal" id="modalExcluir">
-    <div class="modal__backdrop" onclick="fecharModalExcluir()"></div>
+<div class="modal" id="modalExcluir" aria-hidden="true">
+    <div class="modal__backdrop" data-close></div>
     <div class="modal__content" style="height: auto; max-width: 400px;">
         <header class="modal__header">
             <h2 style="color: #d9534f;">⚠️ Confirmar Exclusão</h2>
-            <button class="modal__close" onclick="fecharModalExcluir()">×</button>
+            <button class="modal__close" aria-label="Fechar" data-close>×</button>
         </header>
 
         <div class="modal__body" style="text-align: center; flex-direction: column; gap: 20px;">
@@ -199,11 +203,18 @@
             <form action="../PHP/excluirSalas.php" method="POST" style="width: 100%; height: auto; gap: 10px;">
                 <input type="hidden" name="id_sala" id="delete_id">
                 <button type="submit" class="buttonCriar" style="background-color: #d9534f; width: 100%;">Sim, Excluir</button>
-                <button type="button" onclick="fecharModalExcluir()" style="background: none; border: none; color: var(--azul); cursor: pointer; font-weight: 600;">Cancelar</button>
+                <button type="button" data-close style="background: none; border: none; color: var(--azul); cursor: pointer; font-weight: 600;">Cancelar</button>
             </form>
         </div>
     </div>
 </div>
     
+
+  <?php if ($toast_sucesso): ?>
+    <div class="toast toast--success" data-toast><?= htmlspecialchars($toast_sucesso) ?></div>
+  <?php endif; ?>
+  <?php if ($toast_erro): ?>
+    <div class="toast toast--error" data-toast><?= htmlspecialchars($toast_erro) ?></div>
+  <?php endif; ?>
 </body>
 </html>

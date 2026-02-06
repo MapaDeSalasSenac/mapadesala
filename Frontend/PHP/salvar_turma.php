@@ -3,6 +3,19 @@ require __DIR__ . "/conexao.php";
 require __DIR__ . "/FeriadosNacionais.php";
 
 
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
+
+function redirectWithError(string $msg): void {
+  $_SESSION['erro'] = $msg;
+  header("Location: ../Paginas/turmas.php");
+  exit;
+}
+function redirectWithSuccess(string $msg): void {
+  $_SESSION['sucesso'] = $msg;
+  header("Location: ../Paginas/turmas.php");
+  exit;
+}
+
 // helpers
 
 function isHoliday(DateTime $dt, array &$cacheByYear): bool {
@@ -42,14 +55,14 @@ $diasMask = 0;
 foreach ($dias as $d) if (isset($map[$d])) $diasMask |= $map[$d];
 
 // validações
-if (!$id_professor || $id_professor <= 0) die("Professor inválido.");
-if ($nome_turma === '' || $cod_turma === '') die("Nome/código inválidos.");
-if (!$data_inicio) die("Data início inválida.");
-if (!in_array($turno, ['manha','tarde','noite'], true)) die("Turno inválido.");
-if ($carga_horaria <= 0) die("Carga horária inválida.");
-if ($diasMask === 0) die("Selecione ao menos 1 dia da semana.");
+if (!$id_professor || $id_professor <= 0) redirectWithError("Professor inválido.");
+if ($nome_turma === '' || $cod_turma === '') redirectWithError("Nome/código inválidos.");
+if (!$data_inicio) redirectWithError("Data início inválida.");
+if (!in_array($turno, ['manha','tarde','noite'], true)) redirectWithError("Turno inválido.");
+if ($carga_horaria <= 0) redirectWithError("Carga horária inválida.");
+if ($diasMask === 0) redirectWithError("Selecione ao menos 1 dia da semana.");
 
-if (!$id_sala || $id_sala <= 0) die("Sala inválida.");
+if (!$id_sala || $id_sala <= 0) redirectWithError("Sala inválida.");
 // regra horas
 $horasPorEncontro = ($turno === 'noite') ? 3 : 4;
 $totalEncontros = (int)ceil($carga_horaria / $horasPorEncontro);
@@ -59,6 +72,43 @@ $dt = new DateTime($data_inicio);
 mysqli_begin_transaction($conexao);
 
 try {
+  // Names para mensagens mais claras
+  $nomeSala = "";
+  $nomeProf = "";
+  if ($id_sala) {
+    $stmtNS = mysqli_prepare($conexao, "SELECT nome_sala FROM salas WHERE id_sala=? LIMIT 1");
+    if ($stmtNS) { mysqli_stmt_bind_param($stmtNS, "i", $id_sala); mysqli_stmt_execute($stmtNS); $rs = mysqli_stmt_get_result($stmtNS); if ($r = mysqli_fetch_assoc($rs)) $nomeSala = $r['nome_sala'] ?? ""; }
+  }
+  if ($id_professor) {
+    $stmtNP = mysqli_prepare($conexao, "SELECT nome_professor FROM professores WHERE id_professor=? LIMIT 1");
+    if ($stmtNP) { mysqli_stmt_bind_param($stmtNP, "i", $id_professor); mysqli_stmt_execute($stmtNP); $rp = mysqli_stmt_get_result($stmtNP); if ($r = mysqli_fetch_assoc($rp)) $nomeProf = $r['nome_professor'] ?? ""; }
+  }
+
+  // Preparar checagens de conflito (pra dizer exatamente ONDE e POR QUÊ)
+  $sqlCProf = "
+    SELECT te.data, t.nome_turma
+    FROM turma_encontros te
+    INNER JOIN turmas t ON t.id_turma = te.id_turma
+    WHERE te.id_professor = ?
+      AND te.turno = ?
+      AND te.status = 'marcado'
+      AND te.data = ?
+    LIMIT 1
+  ";
+  $stmtCProf = mysqli_prepare($conexao, $sqlCProf);
+
+  $sqlCSala = "
+    SELECT te.data, t.nome_turma
+    FROM turma_encontros te
+    INNER JOIN turmas t ON t.id_turma = te.id_turma
+    WHERE te.id_sala = ?
+      AND te.turno = ?
+      AND te.status = 'marcado'
+      AND te.data = ?
+    LIMIT 1
+  ";
+  $stmtCSala = mysqli_prepare($conexao, $sqlCSala);
+
   // insere turma
   $sqlTurma = "
     INSERT INTO turmas
@@ -105,6 +155,29 @@ $id_professor,
     }
       $dataStr = $dt->format('Y-m-d');
 
+      // 1) conflito professor
+      if ($stmtCProf) {
+        mysqli_stmt_bind_param($stmtCProf, "iss", $id_professor, $turno, $dataStr);
+        mysqli_stmt_execute($stmtCProf);
+        $r = mysqli_stmt_get_result($stmtCProf);
+        if ($row = mysqli_fetch_assoc($r)) {
+          $turmaConflito = $row['nome_turma'] ?? 'outra turma';
+          throw new Exception("Conflito de PROFESSOR: {$nomeProf} já está alocado em {$dataStr} (turno {$turno}) na turma '{$turmaConflito}'.");
+        }
+      }
+
+      // 2) conflito sala
+      if ($stmtCSala) {
+        mysqli_stmt_bind_param($stmtCSala, "iss", $id_sala, $turno, $dataStr);
+        mysqli_stmt_execute($stmtCSala);
+        $r2 = mysqli_stmt_get_result($stmtCSala);
+        if ($row2 = mysqli_fetch_assoc($r2)) {
+          $turmaConflito = $row2['nome_turma'] ?? 'outra turma';
+          $nomeSalaMsg = $nomeSala ? "{$nomeSala}" : "Sala ID {$id_sala}";
+          throw new Exception("Conflito de SALA: {$nomeSalaMsg} já está ocupada em {$dataStr} (turno {$turno}) pela turma '{$turmaConflito}'.");
+        }
+      }
+
       $restante = $carga_horaria - ($encontrosCriados * $horasPorEncontro);
       $horasDoDia = min($horasPorEncontro, $restante);
 
@@ -120,10 +193,7 @@ $id_professor,
 
   mysqli_commit($conexao);
 
-  echo "<h2>✅ Turma cadastrada!</h2>";  echo "<p><b>Carga horária:</b> {$carga_horaria}h</p>";
-  echo "<p><b>Encontros:</b> {$encontrosCriados}</p>";
-  echo "<p><b>Último encontro:</b> {$ultimaData}</p>";
-  echo "<a href='cadastrar_turma.php'>Cadastrar outra</a>";
+  redirectWithSuccess("Turma cadastrada com sucesso! (Último encontro: {$ultimaData})");
 
 } catch (Throwable $e) {
   mysqli_rollback($conexao);
@@ -131,15 +201,12 @@ $id_professor,
   $msg = $e->getMessage();
 
   if (str_contains($msg, 'uk_prof_data_turno')) {
-    echo "<h2>❌ Conflito de professor</h2>";
-    echo "<p>O professor já está ocupado nesse dia/turno em alguma data gerada.</p>";
+    redirectWithError("Conflito: o professor já está ocupado em alguma das datas geradas nesse turno.");
   } elseif (str_contains($msg, 'uk_sala_data_turno')) {
-    echo "<h2>❌ Conflito de sala</h2>";
-    echo "<p>A sala já está ocupada nesse dia/turno em alguma data gerada.</p>";
+    redirectWithError("Conflito: a sala já está ocupada em alguma das datas geradas nesse turno.");
+  } elseif (str_starts_with($msg, 'Conflito de')) {
+    redirectWithError($msg);
   } else {
-    echo "<h2>❌ Erro</h2>";
-    echo "<pre>" . htmlspecialchars($msg) . "</pre>";
+    redirectWithError("Erro ao cadastrar turma: {$msg}");
   }
-
-  echo "<br><a href='cadastrar_turma.php'>Voltar</a>";
 }

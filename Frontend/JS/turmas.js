@@ -4,7 +4,8 @@ const btnAbrir = document.getElementById("btnAbrir");
 function abrirModal() {
   modal.classList.add("is-open");
   modal.setAttribute("aria-hidden", "false");
-  
+  document.body.classList.add("no-scroll");
+
 
   const firstFocusable = modal.querySelector("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])");
   firstFocusable?.focus();
@@ -13,7 +14,7 @@ function abrirModal() {
 function fecharModal() {
   modal.classList.remove("is-open");
   modal.setAttribute("aria-hidden", "true");
-
+  document.body.classList.remove("no-scroll");
 
   btnAbrir.focus();
 }
@@ -33,8 +34,12 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+// === Helpers (usados em criar + editar) ===
+const mapDay = { seg: 1, ter: 2, qua: 3, qui: 4, sex: 5, sab: 6, dom: 7 };
+function fmtISO(d) { return d.toISOString().slice(0, 10); }
+function jsDayToISOWeekday(d) { return ((d.getDay() + 6) % 7) + 1; } // 1..7
 
-  const mapDay = { seg:1, ter:2, qua:3, qui:4, sex:5, sab:6, dom:7 };
+
   const elPreview = document.getElementById('preview');
   const form = document.getElementById('formTurma');
 
@@ -42,8 +47,6 @@ document.addEventListener("keydown", (e) => {
     return Array.from(document.querySelectorAll('input[name="dias_semana[]"]:checked'))
       .map(i => i.value);
   }
-  function fmtISO(d) { return d.toISOString().slice(0, 10); }
-  function jsDayToISOWeekday(d) { return ((d.getDay() + 6) % 7) + 1; } // 1..7
 
   function gerarDatasPorHoras({ inicioISO, cargaHoraria, turno, diasSelecionados }) {
     const horasPorEncontro = (turno === 'noite') ? 3 : 4;
@@ -212,6 +215,34 @@ document.addEventListener("keydown", (e) => {
 // ========== MODAL DE EDIÇÃO - VERSÃO SIMPLES SEM AJAX ==========
 const modalEditar = document.getElementById("modalEditar");
 
+function getCheckedDaysIn(containerSelector) {
+  return Array.from(document.querySelectorAll(`${containerSelector} input[name="dias_semana[]"]:checked`)).map(i => i.value);
+}
+
+async function carregarDiasTurmaParaEdicao(idTurma) {
+  // Lê bitmask do backend e marca checkboxes do modalEditar
+  try {
+    const resp = await fetch(`../PHP/carregar_dias_turma.php?id_turma=${encodeURIComponent(idTurma)}`, { credentials: 'same-origin' });
+    if (!resp.ok) return;
+    const data = await resp.json().catch(() => null);
+    if (!data || !data.success) return;
+
+    const mask = Number(data.dias_semana || 0);
+    const dias = [];
+    if (mask & 1) dias.push('seg');
+    if (mask & 2) dias.push('ter');
+    if (mask & 4) dias.push('qua');
+    if (mask & 8) dias.push('qui');
+    if (mask & 16) dias.push('sex');
+
+    document.querySelectorAll('#modalEditar input[name="dias_semana[]"]').forEach(cb => {
+      cb.checked = dias.includes(cb.value);
+    });
+  } catch {
+    // silencioso
+  }
+}
+
 function abrirModalEditar(btnElement) {
     console.log("Abrindo modal com dados do botão:", btnElement);
     
@@ -247,14 +278,19 @@ function abrirModalEditar(btnElement) {
         inputDataRecalculo.value = hoje;
     }
     
-    // Limpa os checkboxes de dias (serão preenchidos quando o usuário escolher)
+    // Limpa e depois carrega os dias atuais da turma
     document.querySelectorAll('#modalEditar input[name="dias_semana[]"]').forEach(cb => {
         cb.checked = false;
     });
+    carregarDiasTurmaParaEdicao(dados.id);
     
     // Abre o modal
     modalEditar.classList.add("is-open");
     modalEditar.setAttribute("aria-hidden", "false");
+    document.body.classList.add("no-scroll");
+
+    // Carrega dias atuais da turma (bitmask) pra deixar o modal consistente
+    if (dados.id) carregarDiasTurmaParaEdicao(dados.id);
     
     // Foca no primeiro campo
     const firstInput = modalEditar.querySelector('input, select');
@@ -264,7 +300,138 @@ function abrirModalEditar(btnElement) {
 function fecharModalEditar() {
     modalEditar.classList.remove("is-open");
     modalEditar.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("no-scroll");
+
+    // limpa preview
+    const pv = document.getElementById('previewEditar');
+    if (pv) pv.innerHTML = '';
 }
+
+async function verificarConflitosEdicao({ id_turma, id_sala, id_professor, turno, datas }) {
+  const res = await fetch('../PHP/verificar_conflitos_edicao.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id_turma, id_sala, id_professor, turno, datas })
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !json || json.ok === false) {
+    throw new Error(json?.error || 'Falha ao verificar conflitos (edição).');
+  }
+  return json;
+}
+
+function renderPreviewEditar({ cargaHoraria, turno, datas, horasPorEncontro, horasUltimo, conflitos_professor, conflitos_sala }) {
+  const el = document.getElementById('previewEditar');
+  if (!el) return;
+
+  const setProf = new Set(conflitos_professor || []);
+  const setSala = new Set(conflitos_sala || []);
+  const hasProf = setProf.size > 0;
+  const hasSala = setSala.size > 0;
+  const hasConflito = hasProf || hasSala;
+
+  const badge = hasConflito
+    ? `<div class="preview-badge preview-badge--error">❌ Conflitos detectados. Ajuste antes de salvar.</div>`
+    : `<div class="preview-badge preview-badge--ok">✅ Sem conflitos detectados.</div>`;
+
+  const avisoUltimo = (horasUltimo < horasPorEncontro)
+    ? `<div class="preview-warn">⚠️ Último encontro terá ${horasUltimo}h (não fecha ${horasPorEncontro}h certinho).</div>`
+    : '';
+
+  const linhas = datas.map(dt => {
+    const tags = [];
+    if (setProf.has(dt)) tags.push('Professor');
+    if (setSala.has(dt)) tags.push('Sala');
+    const t = tags.length ? ` <span class="preview-tags">(${tags.join(' + ')})</span>` : '';
+    return `<div class="preview-linha ${tags.length ? 'is-conflito' : ''}">${dt}${t}</div>`;
+  }).join('');
+
+  el.innerHTML = `
+    ${badge}
+    <div class="preview-meta">
+      <div><b>Carga horária:</b> ${cargaHoraria}h</div>
+      <div><b>Turno:</b> ${turno} | <b>Horas/encontro:</b> ${horasPorEncontro}h | <b>Encontros:</b> ${datas.length}</div>
+      <div><b>Primeiro:</b> ${datas[0]} | <b>Último:</b> ${datas[datas.length - 1]}</div>
+      ${avisoUltimo}
+    </div>
+    <div class="preview-lista">${linhas}</div>
+  `;
+
+  const formEditar = document.getElementById('formEditarTurma');
+  const btnSubmit = formEditar?.querySelector('button[type="submit"]');
+  if (btnSubmit) btnSubmit.disabled = hasConflito;
+}
+
+async function atualizarPreviewEditar() {
+  const el = document.getElementById('previewEditar');
+  const formEditar = document.getElementById('formEditarTurma');
+  if (!el || !formEditar) return;
+
+  const id_turma = document.getElementById('edit_id_turma')?.value;
+  const inicioISO = document.getElementById('edit_data_recalculo')?.value;
+  const cargaHoraria = parseInt(document.getElementById('edit_carga_horaria')?.value || '0', 10);
+  const turno = document.getElementById('edit_turno')?.value;
+  const diasSelecionados = getCheckedDaysIn('#modalEditar');
+  const id_sala = document.getElementById('edit_id_sala')?.value || '';
+  const id_professor = document.getElementById('edit_id_professor')?.value || '';
+
+  const btnSubmit = formEditar.querySelector('button[type="submit"]');
+  if (btnSubmit) btnSubmit.disabled = true;
+
+  if (!id_turma || !inicioISO || !cargaHoraria || !turno || diasSelecionados.length === 0 || !id_sala) {
+    el.innerHTML = `<div class="preview-badge preview-badge--error">Preencha: data de recálculo, carga horária, turno, dias da semana e sala.</div>`;
+    return;
+  }
+
+  try {
+    const cal = gerarDatasPorHoras({ inicioISO, cargaHoraria, turno, diasSelecionados });
+    const conf = await verificarConflitosEdicao({
+      id_turma: parseInt(id_turma, 10),
+      id_sala,
+      id_professor,
+      turno,
+      datas: cal.datas
+    });
+
+    renderPreviewEditar({
+      cargaHoraria,
+      turno,
+      datas: cal.datas,
+      horasPorEncontro: cal.horasPorEncontro,
+      horasUltimo: cal.horasUltimo,
+      conflitos_professor: conf.conflitos_professor,
+      conflitos_sala: conf.conflitos_sala
+    });
+  } catch (err) {
+    el.innerHTML = `<div class="preview-badge preview-badge--error">Erro: ${String(err.message || err)}</div>`;
+  }
+}
+
+// Botão Cancelar do modal editar
+document.getElementById('btnCancelarEditar')?.addEventListener('click', fecharModalEditar);
+
+// Botão Pré-visualizar (edição)
+document.getElementById('btnPreviewEditar')?.addEventListener('click', atualizarPreviewEditar);
+
+// Atualiza preview enquanto o usuário mexe (edição)
+document.getElementById('modalEditar')?.addEventListener('input', (e) => {
+  if (
+    ['edit_data_recalculo', 'edit_carga_horaria', 'edit_turno', 'edit_id_sala', 'edit_id_professor'].includes(e.target.id) ||
+    e.target.name === 'dias_semana[]'
+  ) {
+    atualizarPreviewEditar();
+  }
+});
+
+// Bloqueia submit se tiver conflito (edição)
+document.getElementById('formEditarTurma')?.addEventListener('submit', async (e) => {
+  await atualizarPreviewEditar();
+  const btnSubmit = document.getElementById('formEditarTurma')?.querySelector('button[type="submit"]');
+  if (btnSubmit?.disabled) {
+    e.preventDefault();
+    alert('Existe conflito no recálculo. Ajuste antes de salvar.');
+  }
+});
 
 // Evento para abrir modal ao clicar em editar
 document.addEventListener('click', function(e) {
@@ -286,7 +453,7 @@ if (closeBtn) {
 
 // Fechar modal editar ao clicar fora
 modalEditar.addEventListener('click', function(e) {
-    if (e.target === modalEditar) {
+    if (e.target.matches('[data-close-editar]')) {
         fecharModalEditar();
     }
 });

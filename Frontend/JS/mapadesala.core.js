@@ -40,6 +40,7 @@
     filtros: {
       status: "all",
       professor: "",
+      salaId: "all", // ✅ NOVO
       turnos: { matutino: true, vespertino: true, noturno: true },
     },
   };
@@ -164,12 +165,14 @@
     const f = appState.filtros;
     return (
       f.status === "all" &&
-      !norm(f.professor) &&
+      !String(f.professor || "").trim() &&
+      (String(f.salaId || "all") === "all") &&
       f.turnos.matutino &&
       f.turnos.vespertino &&
       f.turnos.noturno
     );
   }
+
 
   function atualizarIndicadorFiltro() {
     if (!botaoFiltro) return;
@@ -197,6 +200,13 @@
               <label class="pilula"><input type="radio" name="status" value="livre"> Só livres</label>
               <label class="pilula"><input type="radio" name="status" value="ocupada"> Só ocupadas</label>
             </div>
+          </div>
+
+          <div class="campo">
+            <div class="rotulo">Sala</div>
+            <select class="entrada" name="sala">
+              <option value="all">Todas</option>
+            </select>
           </div>
 
           <div class="campo">
@@ -239,6 +249,7 @@
         appState.filtros = {
           status: "all",
           professor: "",
+          salaId: "all",
           turnos: { matutino: true, vespertino: true, noturno: true },
         };
         atualizarIndicadorFiltro();
@@ -268,6 +279,23 @@
     document.body.appendChild(overlay);
     return overlay;
   }
+  function preencherSelectSalas(overlay) {
+  const select = overlay.querySelector('select[name="sala"]');
+  if (!select) return;
+
+  // remove opções antigas (dinâmicas)
+  select.querySelectorAll("option[data-dinamico]").forEach((o) => o.remove());
+
+  const salas = Array.isArray(appState.data?.salas) ? appState.data.salas : [];
+  for (const s of salas) {
+    const opt = document.createElement("option");
+    opt.value = String(s.id);
+    opt.textContent = s.nome;
+    opt.dataset.dinamico = "1";
+    select.appendChild(opt);
+  }
+}
+
 
   function sincronizarModalComEstado(overlay) {
     const f = appState.filtros;
@@ -276,6 +304,9 @@
       r.checked = (r.value === f.status);
     });
 
+    const selectSala = overlay.querySelector('select[name="sala"]');
+    if (selectSala) selectSala.value = String(f.salaId ?? "all");
+
     overlay.querySelector('input[name="professor"]').value = f.professor || "";
 
     overlay.querySelectorAll('input[name="turno"]').forEach((c) => {
@@ -283,25 +314,30 @@
     });
   }
 
+
   function sincronizarEstadoComModal(overlay) {
     const status = overlay.querySelector('input[name="status"]:checked')?.value || "all";
     const professor = overlay.querySelector('input[name="professor"]')?.value || "";
+    const salaId = overlay.querySelector('select[name="sala"]')?.value || "all";
 
     const turnos = { matutino: false, vespertino: false, noturno: false };
     overlay.querySelectorAll('input[name="turno"]').forEach((c) => {
       turnos[c.value] = !!c.checked;
     });
 
-    appState.filtros = { status, professor, turnos };
+    appState.filtros = { status, professor, salaId, turnos };
 
     if (!Object.values(appState.filtros.turnos).some(Boolean)) {
       appState.filtros.turnos.matutino = true;
     }
   }
 
+
   function abrirModalFiltros() {
     if (!modalFiltrosEl) modalFiltrosEl = criarModalFiltros();
+    preencherSelectSalas(modalFiltrosEl);
     sincronizarModalComEstado(modalFiltrosEl);
+
     modalFiltrosEl.classList.add("aberto");
     document.body.style.overflow = "hidden";
   }
