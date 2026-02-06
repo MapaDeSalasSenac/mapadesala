@@ -80,8 +80,8 @@ try {
     if ($stmtNS) { mysqli_stmt_bind_param($stmtNS, "i", $id_sala); mysqli_stmt_execute($stmtNS); $rs = mysqli_stmt_get_result($stmtNS); if ($r = mysqli_fetch_assoc($rs)) $nomeSala = $r['nome_sala'] ?? ""; }
   }
   if ($id_professor) {
-    $stmtNP = mysqli_prepare($conexao, "SELECT nome_professor FROM professores WHERE id_professor=? LIMIT 1");
-    if ($stmtNP) { mysqli_stmt_bind_param($stmtNP, "i", $id_professor); mysqli_stmt_execute($stmtNP); $rp = mysqli_stmt_get_result($stmtNP); if ($r = mysqli_fetch_assoc($rp)) $nomeProf = $r['nome_professor'] ?? ""; }
+    $stmtNP = mysqli_prepare($conexao, "SELECT nome FROM professores WHERE id_professor=? LIMIT 1");
+    if ($stmtNP) { mysqli_stmt_bind_param($stmtNP, "i", $id_professor); mysqli_stmt_execute($stmtNP); $rp = mysqli_stmt_get_result($stmtNP); if ($r = mysqli_fetch_assoc($rp)) $nomeProf = $r['nome'] ?? ""; }
   }
 
   // Preparar checagens de conflito (pra dizer exatamente ONDE e POR QUÊ)
