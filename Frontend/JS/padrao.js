@@ -155,7 +155,7 @@
 
       const li = document.createElement("li");
       li.className = "nav-item";
-      li.innerHTML = `<a href="adm.php" class="nav-link"><span class="nav-icon">🛠️</span><span>Adm / Usuários</span></a>`;
+      li.innerHTML = `<a href="adm.php" class="nav-link"><span>Administração</span></a>`;
 
       // coloca perto do fim, antes de Créditos se existir
       const linkCreditos = Array.from(navLista.querySelectorAll("a")).find((a) => (a.getAttribute("href") || "").includes("creditos"));

@@ -64,6 +64,7 @@ $result = $conexao->query($sql);
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Administração - Senac MA</title>
 
 
@@ -91,11 +92,11 @@ $result = $conexao->query($sql);
 <aside class="barra-lateral">
     <nav class="nav-lateral">
         <ul>
-            <li class="item-nav"><a href="mapadesala.html">Mapa de Salas</a></li>
-            <li class="item-nav"><a href="professores.php">Professores</a></li>
-            <li class="item-nav"><a href="salas.php">Salas</a></li>
-            <li class="item-nav"><a href="turmas.php">Turmas</a></li>
-            <li class="item-nav ativo"><a href="adm.php">Usuários</a></li>
+        <li class="item-nav ativo"><a href="mapadesala.html" class="conteudo-barra-lateral">Mapa de Salas</a></li>
+        <li class="item-nav"><a href="professores.php" class="conteudo-barra-lateral">Professores</a></li>
+        <li class="item-nav"><a href="salas.php" class="conteudo-barra-lateral">Salas</a></li>
+        <li class="item-nav"><a href="turmas.php" class="conteudo-barra-lateral">Turmas</a></li>
+        <li class="item-nav"><a href="creditos.html" class="conteudo-barra-lateral">Créditos</a></li>
         </ul>
     </nav>
 

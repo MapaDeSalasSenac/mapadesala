@@ -2,35 +2,10 @@
    LAYOUT BASE
 ================================ */
 
-body{
-    margin:0;
-    padding:0;
-    font-family:'Montserrat', sans-serif;
-    background:#f5f6f8;
+.conteudo-principal > section{
+  max-width: 1400px;
+  margin: 0 auto;
 }
-
-/* SIDEBAR */
-.barra-lateral{
-    position:fixed;
-    top:60px;
-    left:0;
-    width:260px;
-    height:calc(100vh - 64px);
-    background:#083b66;
-    z-index:100;
-}
-
-/* CONTEÚDO */
-.conteudo-principal{
-    margin-left:260px;
-    padding:32px;
-    min-height:calc(100vh - 64px);
-    background:#f5f6f8;
-}
-
-/* ===============================
-   LAYOUT BASE
-================================ */
 
 body{
     margin:0;
@@ -44,19 +19,17 @@ body{
     position:fixed;
     top:60px;
     left:0;
-    width:260px;
     height:calc(100vh - 64px);
     background:#083b66;
     z-index:100;
 }
 
 /* CONTEÚDO */
-.conteudo-principal{
-    margin-left:260px;
-    padding:32px;
+.conteudo-principal{  
     min-height:calc(100vh - 64px);
     background:#f5f6f8;
 }
+
 
 /* ===============================
    ADM – CARDS (VERSÃO FINAL)
@@ -116,8 +89,8 @@ body{
 /* HOVER COM ELEVAÇÃO + COR */
 .card-acoes button:hover{
     opacity:1;
-    transform:translateY(-2px) scale(1.1);
-    filter:drop-shadow(0 4px 6px rgba(0,0,0,.25));
+    transform: translateY(-1px);
+   
 }
 
 /* CORES ESPECÍFICAS */
