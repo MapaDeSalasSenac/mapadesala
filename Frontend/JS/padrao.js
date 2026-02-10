@@ -155,7 +155,15 @@
 
       const li = document.createElement("li");
       li.className = "nav-item";
-      li.innerHTML = `<a href="adm.php" class="nav-link"><span>Administração</span></a>`;
+
+      const isAdmAtivo = paginaAtual === "adm";
+
+      li.innerHTML = `
+        <a href="adm.php" class="item-nav${isAdmAtivo ? " ativo" : ""}">
+          <span>Administração</span>
+        </a>
+      `;
+
 
       // coloca perto do fim, antes de Créditos se existir
       const linkCreditos = Array.from(navLista.querySelectorAll("a")).find((a) => (a.getAttribute("href") || "").includes("creditos"));
@@ -197,3 +205,42 @@
     );
   }
 })();
+async function atualizarLinkAdminSidebar() {
+  if (!navLista) return;
+
+  const s = await obterSessao();
+
+  const existente = navLista.querySelector(
+    'a[href$="adm.php"]'
+  );
+
+  if (s.papel === "admin") {
+    if (existente) {
+      // só atualiza o estado ativo
+      existente.classList.toggle("ativo", paginaAtual === "adm");
+      return;
+    }
+
+    const li = document.createElement("li");
+
+    const a = document.createElement("a");
+    a.href = "adm.php";
+    a.className = "item-nav";
+    if (paginaAtual === "adm") a.classList.add("ativo");
+    a.textContent = "Administração";
+
+    li.appendChild(a);
+
+    const linkCreditos = Array.from(navLista.querySelectorAll("a"))
+      .find(a => (a.getAttribute("href") || "").includes("creditos"));
+
+    if (linkCreditos?.closest("li")) {
+      navLista.insertBefore(li, linkCreditos.closest("li"));
+    } else {
+      navLista.appendChild(li);
+    }
+
+  } else {
+    existente?.closest("li")?.remove();
+  }
+}

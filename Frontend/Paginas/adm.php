@@ -66,7 +66,7 @@ $result = $conexao->query($sql);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Administração - Senac MA</title>
-
+<link rel="icon" type="image/x-icon" href="../IMG/favicon.png">
 
 <link rel="stylesheet" href="../CSS/adm.css">
 <link rel="stylesheet" href="../CSS/padrao.css">
@@ -92,7 +92,7 @@ $result = $conexao->query($sql);
 <aside class="barra-lateral">
     <nav class="nav-lateral">
         <ul>
-        <li class="item-nav ativo"><a href="mapadesala.html" class="conteudo-barra-lateral">Mapa de Salas</a></li>
+        <li class="item-nav"><a href="mapadesala.html" class="conteudo-barra-lateral">Mapa de Salas</a></li>
         <li class="item-nav"><a href="professores.php" class="conteudo-barra-lateral">Professores</a></li>
         <li class="item-nav"><a href="salas.php" class="conteudo-barra-lateral">Salas</a></li>
         <li class="item-nav"><a href="turmas.php" class="conteudo-barra-lateral">Turmas</a></li>
@@ -129,17 +129,17 @@ $result = $conexao->query($sql);
         <span class="badge-admin">Usuário</span>
 
         <div class="card-acoes">
-            <button class="btn-delete"
+            <button class="btn-delete btn-icon "
                 onclick="abrirExcluir(
                     <?= $u['id_usuario'] ?>,
                     '<?= htmlspecialchars($u['email']) ?>'
-                )">🗑️</button>
+                )"><img src="../IMG/lixeiraIcon.png" alt="excluir"></button>
 
-            <button class="btn-edit"
+            <button class="btn-edit btn-icon"
                 onclick="abrirEditar(
                     <?= $u['id_usuario'] ?>,
                     '<?= htmlspecialchars($u['email']) ?>'
-                )">✏️</button>
+                )"><img src="../IMG/lapisIcon.png" alt="editar"></button>
         </div>
     </div>
 

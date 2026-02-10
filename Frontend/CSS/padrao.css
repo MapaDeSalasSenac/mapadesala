@@ -1059,3 +1059,213 @@ body.no-scroll{
 @media (max-width:767px){
   .toast{ left: 14px; right: 14px; top: 62px; }
 }
+
+/* ===============================
+   SIDEBAR – HOVER PADRÃO (ÚNICO)
+================================ */
+
+.nav-lateral li {
+  list-style: none;
+}
+
+/* o <a> ocupa tudo */
+.nav-lateral li > a {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 14px 18px;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* hover SOMENTE aqui */
+.nav-lateral li > a:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+/* ativo */
+.nav-lateral li > a.ativo {
+  background: rgba(255,255,255,0.14);
+  font-weight: 700;
+}
+
+
+.nav-lateral ul {
+  padding: 0;
+  margin: 0;
+}
+
+.nav-lateral li {
+  width: 100%;
+}
+
+/* âncora cobre tudo */
+.nav-lateral li > a {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+/* =====================================================
+   BASE GLOBAL (TODAS AS TELAS)
+===================================================== */
+*{ margin:0; padding:0; box-sizing:border-box; }
+
+:root{
+  --laranja:#FF6B2C;
+  --azul:#003A70;
+  --bg:#f8f9fa;
+  --texto:#111827;
+  --borda:#e5e7eb;
+}
+
+body{
+  font-family:'Montserrat',sans-serif;
+  background:var(--bg);
+  color:#333;
+  min-height:100vh;
+}
+
+/* =====================================================
+   TOPBAR
+===================================================== */
+.barra-topo{
+  background:var(--laranja);
+  height:60px;
+  position:fixed;
+  inset:0 0 auto 0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px;
+  z-index:1000;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+
+.logo-topo img{ height:38px; }
+
+.botao-menu{
+  border:none;
+  background:transparent;
+  color:#fff;
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  font-size:22px;
+  cursor:pointer;
+  display:none;
+}
+
+/* =====================================================
+   SIDEBAR (CORRIGIDA DEFINITIVA)
+===================================================== */
+.barra-lateral{
+  background:var(--azul);
+  width:240px;
+  position:fixed;
+  top:60px;
+  left:0;
+  bottom:0;
+  color:#fff;
+  z-index:900;
+  display:flex;
+  flex-direction:column;
+}
+
+.nav-lateral{ flex:1; }
+
+.nav-lateral ul{
+  list-style:none;
+  padding:0;
+  margin:0;
+}
+
+.nav-lateral li{
+  width:100%;
+}
+
+/* 🔥 O LINK É O ITEM */
+.nav-lateral li > a{
+  display:flex;
+  align-items:center;
+  width:100%;
+  padding:16px 24px;
+  color:#fff;
+  text-decoration:none;
+  font-weight:500;
+  transition: background .2s ease;
+}
+
+/* 🔥 hover único */
+.nav-lateral li > a:hover{
+  background:rgba(255,255,255,.15);
+}
+
+/* 🔥 ativo */
+.nav-lateral li > a.ativo{
+  background:rgba(255,255,255,.22);
+  font-weight:700;
+}
+
+/* =====================================================
+   RODAPÉ SIDEBAR
+===================================================== */
+.rodape-lateral{
+  margin-top:auto;
+  padding:14px 18px;
+  border-top:1px solid rgba(255,255,255,.12);
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.botao-sair-lateral{
+  width:100%;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  padding:10px 12px;
+  border-radius:12px;
+  font-weight:900;
+  cursor:pointer;
+  transition:.15s;
+}
+.botao-sair-lateral:hover{
+  background:rgba(255,255,255,.12);
+}
+
+/* =====================================================
+   CONTEÚDO
+===================================================== */
+.conteudo-principal{
+  margin-left:240px;
+  margin-top:60px;
+  padding:20px 30px 40px;
+  min-width:0;
+}
+
+/* =====================================================
+   RESPONSIVO
+===================================================== */
+@media (max-width:1199px){
+  .botao-menu{ display:inline-flex; }
+
+  .barra-lateral{
+    transform:translateX(-100%);
+    transition:.3s;
+  }
+
+  body.menu-lateral-aberto .barra-lateral{
+    transform:translateX(0);
+  }
+
+  .conteudo-principal{
+    margin-left:0;
+    width:100%;
+  }
+}
+
+@media (max-width:767px){
+  .conteudo-principal{
+    padding:16px 14px 32px;
+  }
+}
