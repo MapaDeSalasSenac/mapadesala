@@ -67,7 +67,20 @@ $sql = "
   FROM turmas t
   LEFT JOIN professores p ON p.id_professor = t.id_professor
   LEFT JOIN salas s ON s.id_sala = t.id_sala
-  ORDER BY t.id_turma DESC
+  ORDER BY
+  (CASE
+     WHEN t.carga_horaria > 0
+      AND (
+        SELECT COALESCE(SUM(te.horas), 0)
+        FROM turma_encontros te
+        WHERE te.id_turma = t.id_turma
+          AND te.status = 'marcado'
+          AND te.data < CURDATE()
+      ) >= t.carga_horaria
+     THEN 1 ELSE 0
+   END) ASC,
+  t.id_turma DESC
+
 ";
 
 $result = mysqli_query($conexao, $sql);
@@ -197,7 +210,7 @@ $result = mysqli_query($conexao, $sql);
                 <div class="line"></div>
 
                 <p class="content-info"><b>Dias restantes:</b> <?= $diasRestantes !== null ? $diasRestantes." dia(s)" : "—" ?></p>
-                <div class="line"></div>
+                <div class="line"></div> 
 
                 <p class="content-info"><b>Progresso:</b> <?= $progresso ?>%</p>
 
@@ -268,7 +281,7 @@ $result = mysqli_query($conexao, $sql);
                         <input type="date" name="data_inicio" id="data_inicio" required>
                     </div>
                     <div class="form-group">
-                        <label>Carga horária</label>
+                        <label>Grade curricular</label>
                         <input type="number" name="carga_horaria" id="carga_horaria" min="1" required placeholder="Ex: 80">
                     </div>
                     <div class="form-group">
@@ -356,7 +369,7 @@ $result = mysqli_query($conexao, $sql);
                         <small style="color:#666;">Data a partir da qual os encontros serão recalculados</small>
                     </div>
                     <div class="form-group">
-                        <label>Carga horária</label>
+                        <label>Grade curricular</label>
                         <input type="number" name="carga_horaria" id="edit_carga_horaria" min="1" required>
                     </div>
                     <div class="form-group">
