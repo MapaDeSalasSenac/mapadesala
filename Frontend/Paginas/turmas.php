@@ -96,7 +96,7 @@ $result = mysqli_query($conexao, $sql);
       <img src="../IMG/senac_logo_branco.png" alt="Senac" />
     </div>
 
-    <button class="botao-usuario" id="botao-usuario" aria-label="Usuário" aria-expanded="false">👤</button>
+    <button class="botao-usuario" id="botao-usuario" aria-label="Usuário" aria-expanded="false"><img src="../IMG/usuarioIcon.png" alt="Usuário"></button>
   </header>
 
   <!-- SIDEBAR PADRÃO -->
@@ -159,7 +159,7 @@ $result = mysqli_query($conexao, $sql);
             }
           ?>
             <div class="card" data-id="<?= (int)$t['id_turma'] ?>">
-              <button class="btn-edit" title="Editar Turma" 
+              <button class="icon-btn edit btn-edit" title="Editar Turma" 
                 data-id="<?= (int)$t['id_turma'] ?>"
                 data-nome="<?= htmlspecialchars($t['nome_turma']) ?>"
                 data-codigo="<?= htmlspecialchars($t['cod_turma']) ?>"
@@ -167,7 +167,12 @@ $result = mysqli_query($conexao, $sql);
                 data-turno="<?= htmlspecialchars($t['turno']) ?>"
                 data-professor="<?= $t['id_professor'] ?? '' ?>"
                 data-sala="<?= $t['id_sala'] ?? '' ?>">
-                ✏️</button>
+                <img src="../IMG/lapisIcon.png" alt="editar"></button>
+
+              <button class="icon-btn delete btn-delete" title="Excluir Turma"
+                data-id="<?= (int)$t['id_turma'] ?>"
+                data-nome="<?= htmlspecialchars($t['nome_turma']) ?>">
+                <img src="../IMG/lixeiraIcon.png" alt="excluir"></button>
 
               <h3 class="card-h3"><?= htmlspecialchars($t['nome_turma']) ?></h3>
               <div class="line"></div>
@@ -384,6 +389,28 @@ $result = mysqli_query($conexao, $sql);
             </form>
         </div>
     </div>
+</div>
+
+<!-- MODAL DE EXCLUSÃO -->
+<div class="modal" id="modalExcluirTurma" aria-hidden="true">
+  <div class="modal__backdrop" data-close-excluir></div>
+  <div class="modal__content" role="dialog" aria-modal="true" style="height:auto; max-width: 420px; border-top-color:#d9534f;">
+    <div class="modal__header">
+      <h2 style="color:#d9534f;">⚠️ Confirmar Exclusão</h2>
+      <button class="modal__close" data-close-excluir aria-label="Fechar">×</button>
+    </div>
+
+    <div class="modal__body" style="text-align:center; display:flex; flex-direction:column; gap:14px;">
+      <p>Tem certeza que deseja excluir a turma <strong id="nomeTurmaExcluir" style="color: var(--azul);"></strong>?</p>
+      <p style="font-size: 13px; color:#666;">Esta ação remove também os encontros gerados dessa turma.</p>
+
+      <form action="../PHP/excluirTurma.php" method="POST" style="display:flex; flex-direction:column; gap:10px;">
+        <input type="hidden" name="id_turma" id="delete_turma_id">
+        <button type="submit" class="btn-submit" style="background:#d9534f;">Sim, excluir</button>
+        <button type="button" class="btn-cancel" data-close-excluir style="background:none; border:1px solid var(--borda);">Cancelar</button>
+      </form>
+    </div>
+  </div>
 </div>
 
   <?php if ($toast_sucesso): ?>

@@ -5,7 +5,8 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
 $toast_sucesso = $_SESSION['sucesso'] ?? null; unset($_SESSION['sucesso']);
 $toast_erro = $_SESSION['erro'] ?? null; unset($_SESSION['erro']);
 
-  $sql ="SELECT nome_sala, capacidade FROM salas";
+  // id_sala é necessário para editar/excluir funcionar
+  $sql ="SELECT id_sala, nome_sala, capacidade FROM salas ORDER BY nome_sala ASC";
   $result = $conexao->query($sql);
 ?>
 <!DOCTYPE html>
@@ -37,7 +38,7 @@ $toast_erro = $_SESSION['erro'] ?? null; unset($_SESSION['erro']);
       <img src="../IMG/senac_logo_branco.png" alt="Senac" />
     </div>
 
-    <button class="botao-usuario" id="botao-usuario" aria-label="Usuário" aria-expanded="false">👤</button>
+    <button class="botao-usuario" id="botao-usuario" aria-label="Usuário" aria-expanded="false"><img src="../IMG/usuarioIcon.png" alt="Usuário"></button>
   </header>
 
   <!-- SIDEBAR PADRÃO -->
@@ -100,19 +101,19 @@ $toast_erro = $_SESSION['erro'] ?? null; unset($_SESSION['erro']);
 
       <div class="cards" id="listaSalas">
         <?php while ($row = $result->fetch_assoc()): ?>
-          <div class="card" data-id="12">
-            <button class="btn-edit" title="Editar Sala" 
+          <div class="card" data-id="<?= (int)$row['id_sala'] ?>">
+            <button class="icon-btn edit btn-edit" title="Editar Sala" 
             data-id="<?= $row['id_sala'] ?>" 
             data-nome="<?= htmlspecialchars($row['nome_sala']) ?>" 
             data-capacidade="<?= htmlspecialchars($row['capacidade']) ?>" 
             onclick="abrirModalEdicao(this)">
-              ✏️
+              <img src="../IMG/lapisIcon.png" alt="editar">
             </button>
-            <button class="btn-delete" title="Excluir Sala" 
+            <button class="icon-btn delete btn-delete" title="Excluir Sala" 
             data-id="<?= $row['id_sala'] ?>" 
             data-nome="<?= htmlspecialchars($row['nome_sala']) ?>" 
             onclick="abrirModalExcluir(this)">
-              🗑️
+              <img src="../IMG/lixeiraIcon.png" alt="excluir">
             </button>
             <h3 class="card-h3"><?= htmlspecialchars($row['nome_sala']) ?></h3>
             <div class="line"></div>

@@ -65,7 +65,7 @@
       <img src="../IMG/senac_logo_branco.png" alt="Senac" />
     </div>
 
-    <button class="botao-usuario" id="botao-usuario" aria-label="Usuário" aria-expanded="false">👤</button>
+    <button class="botao-usuario" id="botao-usuario" aria-label="Usuário" aria-expanded="false"><img src="../IMG/usuarioIcon.png" alt="Usuário"></button>
   </header>
 
   <!-- SIDEBAR PADRÃO -->
@@ -123,12 +123,12 @@
             data-cursos="<?= htmlspecialchars($row['cursos_complementares'] ?? '') ?>"
           >
 
-            <button class="btn-edit" title="Editar professor">✏️</button>
-            <button type="button" class="btn-delete" title="Excluir professor"
+            <button class="icon-btn edit btn-edit" type="button" title="Editar professor"><img src="../IMG/lapisIcon.png" alt="Editar"></button>
+            <button type="button" class="icon-btn delete btn-delete" title="Excluir professor"
               data-id="<?= (int)$row['id_professor'] ?>"
               data-nome="<?= htmlspecialchars($row['nome']) ?>"
             >
-              🗑️
+              <img src="../IMG/lixeiraIcon.png" alt="excluir">
             </button>
 
             <h3 class="professor-nome"><?= htmlspecialchars($row["nome"] ?? "") ?></h3>

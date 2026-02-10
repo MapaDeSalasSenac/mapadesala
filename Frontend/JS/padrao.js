@@ -100,7 +100,7 @@
       <div class="menu-usuario__cabecalho">
         <div class="menu-usuario__papel" id="menuUsuarioPapel">Usuário</div>
       </div>
-      <button type="button" class="menu-usuario__sair" data-acao="sair">Sair</button>
+      <button type="button" class="menu-usuario__sair" data-acao="sair"><img src="../IMG/sairIcon.png" alt="Sair">Sair</button>
     `;
     document.body.appendChild(pop);
 

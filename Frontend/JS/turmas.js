@@ -90,6 +90,12 @@ function jsDayToISOWeekday(d) { return ((d.getDay() + 6) % 7) + 1; } // 1..7
     const setProf = new Set(conflitos_professor || []);
     const setSala = new Set(conflitos_sala || []);
 
+    // guarda o último diagnóstico para mensagens mais claras no submit
+    window.__turmasUltimoConflito = {
+      professor: Array.from(setProf),
+      sala: Array.from(setSala)
+    };
+
     const total = datas.length;
     const primeira = datas[0];
     const ultima = datas[datas.length - 1];
@@ -104,8 +110,34 @@ function jsDayToISOWeekday(d) { return ((d.getDay() + 6) % 7) + 1; } // 1..7
          </div>`
       : '';
 
+    const detalheConflitos = (() => {
+      if (!hasConflito) return '';
+
+      const top = `<div style="margin-top:8px;color:#b00;font-weight:900;">⚠️ Conflitos detectados</div>`;
+
+      const bloco = (titulo, arr) => {
+        const n = (arr || []).length;
+        if (!n) return '';
+        const amostra = (arr || []).slice(0, 4);
+        const resto = n - amostra.length;
+        return `
+          <div style="margin-top:8px;padding:10px 12px;border:1px solid rgba(176,0,0,.25);border-radius:10px;background:rgba(176,0,0,.06);">
+            <div style="font-weight:900;">${titulo} em ${n} data(s)</div>
+            <div style="margin-top:6px;line-height:1.25;">
+              ${amostra.map(d => `• ${d}`).join('<br>')}
+              ${resto > 0 ? `<br>• ... +${resto} datas` : ''}
+            </div>
+          </div>
+        `;
+      };
+
+      return top +
+        bloco('👨‍🏫 Professor ocupado', Array.from(setProf)) +
+        bloco('🏫 Sala ocupada', Array.from(setSala));
+    })();
+
     const badge = hasConflito
-      ? `<div style="color:#b00;font-weight:900;">❌ Existem conflitos. Ajuste antes de salvar.</div>`
+      ? `<div style="color:#b00;font-weight:900;">❌ Não dá pra salvar: existe conflito de agenda.</div>${detalheConflitos}`
       : `<div style="color:#070;font-weight:900;">✅ Sem conflitos detectados.</div>`;
     const obsSala = `<div style="margin-top:6px;"><b>Sala:</b> será reservada.</div>`;
 
@@ -121,12 +153,14 @@ function jsDayToISOWeekday(d) { return ((d.getDay() + 6) % 7) + 1; } // 1..7
 
     elPreview.innerHTML = `
       ${badge}
-      <div style="margin-top:6px;"><b>Carga horária:</b> ${cargaHoraria}h</div>
+      <div style="margin-top:10px;"><b>Carga horária:</b> ${cargaHoraria}h</div>
       <div><b>Turno:</b> ${turno} | <b>Horas por encontro:</b> ${horasPorEncontro}h | <b>Encontros:</b> ${total}</div>
       <div><b>Primeiro:</b> ${primeira} | <b>Último:</b> ${ultima}</div>
       ${obsSala}
       ${avisoUltimo}
-
+      <div style="margin-top:10px;border-top:1px solid rgba(0,0,0,.08);padding-top:10px;max-height:220px;overflow:auto;">
+        ${linhas}
+      </div>
     `;
 
     // Bloqueia submit se tiver conflito
@@ -208,7 +242,12 @@ function jsDayToISOWeekday(d) { return ((d.getDay() + 6) % 7) + 1; } // 1..7
     const btnSubmit = form.querySelector('button[type="submit"]');
     if (btnSubmit?.disabled) {
       e.preventDefault();
-      alert("Existe conflito de agenda. Ajuste antes de salvar.");
+      const last = window.__turmasUltimoConflito || { professor: [], sala: [] };
+      let msg = "Existe conflito de agenda. Ajuste antes de salvar.\n\n";
+      if (last.professor?.length) msg += `👨‍🏫 Professor ocupado em ${last.professor.length} data(s)\n`;
+      if (last.sala?.length) msg += `🏫 Sala ocupada em ${last.sala.length} data(s)\n`;
+      msg += "\nAbra o Preview para ver as datas conflitantes.";
+      alert(msg);
     }
   });
 
@@ -469,3 +508,174 @@ document.addEventListener('keydown', function(e) {
 console.log("Script turmas.js carregado");
 console.log("Modal editar existe?", !!modalEditar);
 console.log("Botões editar encontrados:", document.querySelectorAll('.btn-edit').length);
+
+// ========== EXCLUSÃO DE TURMA ==========
+const modalExcluirTurma = document.getElementById('modalExcluirTurma');
+
+function abrirModalExcluirTurma(btnElement) {
+  if (!modalExcluirTurma) return;
+  const id = btnElement.getAttribute('data-id') || '';
+  const nome = btnElement.getAttribute('data-nome') || '';
+  const inputId = document.getElementById('delete_turma_id');
+  const elNome = document.getElementById('nomeTurmaExcluir');
+  if (inputId) inputId.value = id;
+  if (elNome) elNome.innerText = nome;
+
+  modalExcluirTurma.classList.add('is-open');
+  modalExcluirTurma.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('no-scroll');
+}
+
+function fecharModalExcluirTurma() {
+  if (!modalExcluirTurma) return;
+  modalExcluirTurma.classList.remove('is-open');
+  modalExcluirTurma.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('no-scroll');
+}
+
+// Abrir ao clicar no botão 🗑️
+document.addEventListener('click', function (e) {
+  const btnDel = e.target.closest('.btn-delete');
+  if (btnDel && btnDel.hasAttribute('data-id')) {
+    e.preventDefault();
+    e.stopPropagation();
+    abrirModalExcluirTurma(btnDel);
+    return;
+  }
+
+  const close = e.target.closest('[data-close-excluir]');
+  if (close && modalExcluirTurma && modalExcluirTurma.contains(close)) {
+    e.preventDefault();
+    fecharModalExcluirTurma();
+  }
+});
+
+// ESC fecha
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' && modalExcluirTurma?.classList.contains('is-open')) {
+    fecharModalExcluirTurma();
+  }
+});
+// =========================
+// FILTROS (modal padrão)
+// =========================
+(() => {
+  const pagina = 'turmas';
+  const lista = document.getElementById('listaTurmas');
+  if (!lista) return;
+
+  let overlay = null;
+  let estado = { q: '', turno: 'all' };
+
+  function getCards() {
+    return Array.from(lista.querySelectorAll('.card'));
+  }
+
+  function turnoDoCard(card) {
+    const el = card.querySelector('.p_turno');
+    if (!el) return '';
+    return (el.textContent || '').toLowerCase();
+  }
+
+  function aplicarFiltros() {
+    const q = (estado.q || '').trim().toLowerCase();
+    const turno = (estado.turno || 'all').toLowerCase();
+
+    getCards().forEach((card) => {
+      const hay = (card.textContent || '').toLowerCase();
+      const okTexto = !q || hay.includes(q);
+      const okTurno = (turno === 'all') || turnoDoCard(card).includes(turno);
+      card.style.display = (okTexto && okTurno) ? '' : 'none';
+    });
+  }
+
+  function criarOverlay() {
+    // Usa o modal "namespaced" de filtros (evita conflito com .modal dos modais de CRUD)
+    const el = document.createElement('div');
+    el.className = 'sobreposicao-modal-filtros';
+    el.innerHTML = `
+      <div class="modal-filtros" role="dialog" aria-modal="true" aria-label="Filtros">
+        <div class="cabecalho-modal">
+          <div class="titulo-modal">Filtros</div>
+          <button class="fechar-modal" type="button" data-acao="fechar" aria-label="Fechar">×</button>
+        </div>
+        <div class="corpo-modal">
+          <div class="campo">
+            <div class="rotulo">Buscar</div>
+            <input class="entrada" id="filtroTexto" type="text" placeholder="Nome, código, professor, sala..." />
+          </div>
+
+          <div class="campo">
+            <div class="rotulo">Turno</div>
+            <select class="entrada" id="filtroTurno">
+              <option value="all">Todos</option>
+              <option value="manha">Manhã</option>
+              <option value="tarde">Tarde</option>
+              <option value="noite">Noite</option>
+            </select>
+          </div>
+
+          <div class="linha-botoes">
+            <button class="btn-secundario" type="button" data-acao="limpar">Limpar</button>
+            <button class="btn-principal" type="button" data-acao="aplicar">Aplicar</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    el.addEventListener('click', (e) => {
+      if (e.target === el) fechar();
+      const acao = e.target.closest('[data-acao]')?.dataset.acao;
+      if (!acao) return;
+
+      if (acao === 'fechar') fechar();
+      if (acao === 'limpar') {
+        estado = { q: '', turno: 'all' };
+        aplicarFiltros();
+        fechar();
+      }
+      if (acao === 'aplicar') {
+        const inp = el.querySelector('#filtroTexto');
+        const sel = el.querySelector('#filtroTurno');
+        estado.q = inp?.value || '';
+        estado.turno = sel?.value || 'all';
+        aplicarFiltros();
+        fechar();
+      }
+    });
+
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') fechar();
+      if (e.key === 'Enter') {
+        const inp = el.querySelector('#filtroTexto');
+        const sel = el.querySelector('#filtroTurno');
+        estado.q = inp?.value || '';
+        estado.turno = sel?.value || 'all';
+        aplicarFiltros();
+        fechar();
+      }
+    });
+
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function abrir() {
+    if (!overlay) overlay = criarOverlay();
+    overlay.classList.add('aberto');
+    const inp = overlay.querySelector('#filtroTexto');
+    const sel = overlay.querySelector('#filtroTurno');
+    if (inp) inp.value = estado.q || '';
+    if (sel) sel.value = estado.turno || 'all';
+    setTimeout(() => inp?.focus(), 0);
+  }
+
+  function fechar() {
+    overlay?.classList.remove('aberto');
+  }
+
+  window.addEventListener('app:abrir-filtros', (e) => {
+    if (e?.detail?.pagina !== pagina) return;
+    abrir();
+  });
+})();

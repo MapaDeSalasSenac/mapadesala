@@ -85,7 +85,7 @@ $result = $conexao->query($sql);
         <img src="../IMG/senac_logo_branco.png" alt="Senac">
     </div>
 
-    <button class="botao-usuario" id="botao-usuario">👤</button>
+    <button class="botao-usuario" id="botao-usuario"><img src="../IMG/usuarioIcon.png" alt="Usuário"></button>
 </header>
 
 <!-- ================= SIDEBAR PADRÃO ================= -->

@@ -56,6 +56,19 @@ body{
   justify-content: center;
 }
 
+.botao-usuario img{
+  width:22px;
+  height:22px;
+  opacity:.85;
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.botao-usuario:hover img{
+  opacity:1;
+  transform: scale(1.05);
+}
+
+
 /* botão menu (só mobile) */
 .botao-menu{
   border:none;
@@ -326,6 +339,10 @@ body{
   color:var(--texto);
   cursor:pointer;
 }
+.menu-usuario img{
+  width: 7%;
+  margin-right: 5px;
+}
 .menu-usuario button:hover{
   background:rgba(255,107,44,.08);
   color:var(--laranja);
@@ -387,6 +404,31 @@ body{
   transition:transform .14s ease;
 }
 .sobreposicao-modal-filtros.aberto .modal-filtros{ transform:translateY(0); }
+
+/* Ações do modal de filtros (Aplicar / Limpar) */
+.modal-filtros .linha-acoes{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  padding-top:6px;
+}
+.modal-filtros .botao-secundario,
+.modal-filtros .botao-primario{
+  border:1px solid rgba(0,0,0,.12);
+  background:#fff;
+  border-radius:12px;
+  padding:10px 14px;
+  font-weight:900;
+  cursor:pointer;
+  transition: transform .12s ease, background .12s ease, border-color .12s ease;
+}
+.modal-filtros .botao-secundario:hover{ transform: translateY(-1px); }
+.modal-filtros .botao-primario{
+  background:rgba(255,107,44,.12);
+  border-color:rgba(255,107,44,.28);
+  color:var(--laranja);
+}
+.modal-filtros .botao-primario:hover{ transform: translateY(-1px); }
 
 .linha--grid2{
   display:grid;
@@ -911,6 +953,33 @@ body.entrada-pagina--up .barra-lateral{
 body.no-scroll{
   transform: none !important;
   filter: none !important;
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn img {
+  width: 18px;
+  height: 18px;
+  opacity: .75;
+  transition: opacity .2s ease, transform .2s ease;
+}
+
+.icon-btn:hover img {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.icon-btn.delete:hover img {
+  filter: brightness(0) saturate(100%) invert(28%) sepia(87%) saturate(1870%) hue-rotate(350deg);
 }
 
 

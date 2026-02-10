@@ -109,3 +109,107 @@ document.addEventListener("keydown", (e) => {
     fecharModalExcluir();
   }
 });
+
+// =========================
+// FILTROS (modal padrão - páginas administrativas)
+// =========================
+(() => {
+  const pagina = 'professores';
+  const lista = document.getElementById('listaProfessores');
+  if (!lista) return;
+
+  let overlay = null;
+  let estado = { q: '' };
+
+  function getCards() {
+    return Array.from(lista.querySelectorAll('.card'));
+  }
+
+  function aplicarFiltros() {
+    const q = (estado.q || '').trim().toLowerCase();
+    const cards = getCards();
+    cards.forEach((card) => {
+      const hay = (card.innerText || '').toLowerCase();
+      const ok = !q || hay.includes(q);
+      card.style.display = ok ? '' : 'none';
+    });
+  }
+
+  function criarOverlay() {
+    // Usa o modal "namespaced" de filtros (evita conflito com .modal das páginas)
+    const el = document.createElement('div');
+    el.className = 'sobreposicao-modal-filtros';
+    el.setAttribute('role', 'presentation');
+    el.innerHTML = `
+      <div class="modal-filtros" role="dialog" aria-modal="true" aria-label="Filtros">
+        <div class="cabecalho-modal">
+          <div class="titulo-modal">Filtros</div>
+          <button type="button" class="fechar-modal" data-acao="fechar" aria-label="Fechar">×</button>
+        </div>
+        <div class="corpo-modal">
+          <div class="campo">
+            <div class="rotulo">Buscar</div>
+            <input class="entrada" id="filtroTexto" placeholder="Nome, formação, turma, email..." />
+          </div>
+          <div class="linha-acoes">
+            <button type="button" class="botao-secundario" data-acao="limpar">Limpar</button>
+            <button type="button" class="botao-primario" data-acao="aplicar">Aplicar</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // clique fora fecha
+    el.addEventListener('click', (e) => {
+      if (e.target === el) fechar();
+      const acao = e.target.closest('[data-acao]')?.dataset.acao;
+      if (!acao) return;
+      if (acao === 'fechar') fechar();
+      if (acao === 'limpar') {
+        estado.q = '';
+        const inp = el.querySelector('#filtroTexto');
+        if (inp) inp.value = '';
+        aplicarFiltros();
+      }
+      if (acao === 'aplicar') {
+        const inp = el.querySelector('#filtroTexto');
+        estado.q = inp?.value || '';
+        aplicarFiltros();
+        fechar();
+      }
+    });
+
+    // enter aplica
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') fechar();
+      if (e.key === 'Enter') {
+        const inp = el.querySelector('#filtroTexto');
+        estado.q = inp?.value || '';
+        aplicarFiltros();
+        fechar();
+      }
+    });
+
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function abrir() {
+    if (!overlay) overlay = criarOverlay();
+    overlay.classList.add('aberto');
+    const inp = overlay.querySelector('#filtroTexto');
+    if (inp) {
+      inp.value = estado.q || '';
+      setTimeout(() => inp.focus(), 0);
+    }
+  }
+
+  function fechar() {
+    overlay?.classList.remove('aberto');
+  }
+
+  window.addEventListener('app:abrir-filtros', (e) => {
+    if (e?.detail?.pagina !== pagina) return;
+    abrir();
+  });
+})();

@@ -54,6 +54,8 @@
   border-radius: 18px;
   padding: 20px 25px;
   position: relative;
+  border: 1px solid rgba(0,0,0,.06);
+  box-shadow: 0 10px 26px rgba(0,0,0,.06);
 }
 
 .btn-edit {
@@ -76,6 +78,7 @@
 .card-h3 {
   font-size: 18px;
   font-weight: 600;
+  color: #003A70;
 }
 
 .info {
