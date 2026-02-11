@@ -34,6 +34,13 @@ $sql = "
     s.nome_sala AS sala_nome,
 
     (
+      SELECT MIN(te.data)
+      FROM turma_encontros te
+      WHERE te.id_turma = t.id_turma
+      AND te.status = 'marcado'
+    ) AS data_inicio,
+
+    (
       SELECT MAX(te.data)
       FROM turma_encontros te
       WHERE te.id_turma = t.id_turma
@@ -141,6 +148,7 @@ $result = mysqli_query($conexao, $sql);
 
         <div class="actions-bar">
           <button class="btn-icon btn-add" title="Adicionar Turma" id="btnAbrir">+</button>
+          <button class="botao-icone btn-arquivado" title="Turmas Arquivadas"><img src="../IMG/archive_120061.png" alt=""></button>
           <button class="botao-icone botao-filtro" type="button" data-abrir-filtros title="Filtros">
             <img src="../IMG/filtro.png" alt="Filtro" style="width:22px;height:22px;">
           </button>
@@ -152,6 +160,14 @@ $result = mysqli_query($conexao, $sql);
           <p>Nenhuma turma cadastrada.</p>
         <?php else: ?>
           <?php while ($t = mysqli_fetch_assoc($result) ):
+          $dataInicio = $t['data_inicio']
+            ? date('d/m/Y', strtotime($t['data_inicio']))
+            : '—';
+
+          $dataFim = $t['data_fim']
+            ? date('d/m/Y', strtotime($t['data_fim']))
+            : '—';
+
             $carga = (int)($t['carga_horaria'] ?? 0);
             $horasRealizadas = (int)($t['horas_realizadas'] ?? 0);
             $horasRestantes  = (int)($t['horas_restantes'] ?? 0);
@@ -201,6 +217,12 @@ $result = mysqli_query($conexao, $sql);
                 <div class="line"></div>
 
                 <p class="content-info"><b>Sala:</b> <?= $t['sala_nome'] ? htmlspecialchars($t['sala_nome']) : "—" ?></p>
+                <div class="line"></div>
+
+               <p class="content-info"><b>Data início:</b> <?= $dataInicio ?></p>
+                <div class="line"></div>
+
+                <p class="content-info"><b>Data encerramento:</b> <?= $dataFim ?></p>
                 <div class="line"></div>
 
                 <p class="content-info"><b>Horas restantes:</b> <?= $horasRestantes ?>h</p>
@@ -272,7 +294,7 @@ $result = mysqli_query($conexao, $sql);
                     </div>
                     <div class="form-group">
                         <label>Código da turma</label>
-                        <input type="text" name="cod_turma" id="cod_turma" required placeholder="Ex: INF-2026-01">
+                        <input type="text" name="cod_turma" id="cod_turma" required placeholder="Ex: 2026.0.000">
                     </div>
                 </div>
 <div class="form-row">
@@ -362,7 +384,7 @@ $result = mysqli_query($conexao, $sql);
                         <input type="text" name="cod_turma" id="edit_cod_turma" required>
                     </div>
                 </div>
-<div class="form-row">
+                <div class="form-row">
                     <div class="form-group">
                         <label>Data para recálculo</label>
                         <input type="date" name="data_recalculo" id="edit_data_recalculo" required>
@@ -425,6 +447,35 @@ $result = mysqli_query($conexao, $sql);
     </div>
   </div>
 </div>
+<!-- MODAL: TURMAS ARQUIVADAS -->
+<div class="modal modal-arquivadas" id="modalArquivadas" aria-hidden="true">
+  <div class="modal__backdrop" data-close-arquivadas></div>
+
+  <div class="modal__content modal__content--wide" role="dialog" aria-modal="true" aria-label="Turmas arquivadas">
+    <div class="modal__header">
+      <h2>Turmas arquivadas</h2> 
+    <div class="arquivadas-actions">
+      <button type="button" class="btn-arquivadas-clear" id="btnArquivadasClear" title="Apagar todas as arquivadas">
+        Apagar tudo
+      </button>
+    <button class="modal__close" data-close-arquivadas aria-label="Fechar">×</button>
+  </div>
+    </div>
+
+    <div class="modal__body">
+      <p class="arquivadas-sub">
+        Aqui ficam as turmas com <b>100% de progresso</b>, pra não poluir a tela principal
+      </p>
+
+      <div class="cards cards-arquivadas" id="listaTurmasArquivadas"></div>
+
+      <div class="arquivadas-empty" id="arquivadasEmpty" style="display:none;">
+        Nenhuma turma arquivada ainda.
+      </div>
+    </div>
+  </div>
+</div>
+
 
   <?php if ($toast_sucesso): ?>
     <div class="toast toast--success" data-toast><?= htmlspecialchars($toast_sucesso) ?></div>

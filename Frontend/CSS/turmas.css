@@ -389,3 +389,80 @@ button[type="button"]{
 .btn-preview{ background: var(--azul) !important; color: #fff !important; border: none !important; }
 .btn-cancel{ background: #fff !important; color: var(--texto) !important; border: 1px solid var(--borda) !important; }
 .btn-cancel:hover{ background: rgba(0,0,0,.03) !important; }
+
+.btn-arquivado{
+  background-color: #eee;
+  padding: 0px;
+}
+
+.btn-arquivado img{
+  width: 28px;
+  height: 28px;
+}
+
+/* ===== MODAL ARQUIVADAS (largo e central) ===== */
+.modal__content--wide{
+  width: min(1200px, calc(100vw - 80px)); /* deixa espaço nas laterais */
+  max-width: none; /* ignora o max-width 550px do modal padrão */
+}
+
+/* grid dentro do modal */
+.cards-arquivadas{
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(280px, 1fr));
+  gap: 22px;
+}
+
+/* Responsivo */
+@media (max-width: 1050px){
+  .cards-arquivadas{ grid-template-columns: repeat(2, minmax(280px, 1fr)); }
+}
+@media (max-width: 720px){
+  .modal__content--wide{
+    width: calc(100vw - 30px);
+  }
+  .cards-arquivadas{ grid-template-columns: 1fr; }
+}
+
+.arquivadas-sub{
+  margin: 0 0 8px 0;
+  color: #555;
+  font-size: 14px;
+}
+
+.arquivadas-empty{
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px dashed rgba(0,0,0,.18);
+  border-radius: 12px;
+  background: rgba(0,0,0,.02);
+  color: #666;
+  text-align: center;
+}
+
+.arquivadas-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.btn-arquivadas-clear{
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.15);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.btn-arquivadas-clear:hover{
+  background: rgba(0,0,0,.03);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0,0,0,.08);
+}
+
+.p_turno{
+  text-transform: capitalize;
+}

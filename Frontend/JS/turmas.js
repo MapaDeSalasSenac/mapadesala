@@ -34,6 +34,136 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+// =========================
+// MODAL: TURMAS ARQUIVADAS
+// =========================
+(() => {
+  const btnArquivado = document.querySelector('.btn-arquivado');
+  const modalArquivadas = document.getElementById('modalArquivadas');
+  const listaPrincipal = document.getElementById('listaTurmas');
+  const listaArquivadas = document.getElementById('listaTurmasArquivadas');
+  const empty = document.getElementById('arquivadasEmpty');
+
+  if (!btnArquivado || !modalArquivadas || !listaPrincipal || !listaArquivadas) return;
+  
+  const btnClear = document.getElementById('btnArquivadasClear');
+
+  async function apagarTodasArquivadas() {
+    const cards = Array.from(listaArquivadas.querySelectorAll('.card'));
+    if (!cards.length) return;
+
+    const ok = confirm(`Apagar ${cards.length} turma(s) arquivada(s) do BANCO também?\n\nIsso remove a turma e os encontros gerados.`);
+    if (!ok) return;
+
+    btnClear.disabled = true;
+    btnClear.textContent = "🗑️ Apagando...";
+
+    try {
+      const resp = await fetch('../PHP/apagar_turmas_arquivadas.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ confirm: true })
+      });
+
+      const json = await resp.json().catch(() => null);
+      if (!resp.ok || !json || json.ok !== true) {
+        throw new Error(json?.error || 'Falha ao apagar no servidor.');
+      }
+
+      // Remove da tela só depois que o banco confirmou
+      cards.forEach(c => c.remove());
+
+      // Mostra vazio
+      if (empty) empty.style.display = 'block';
+
+      alert(`✅ Apagou do banco!\n\nTurmas: ${json.deleted_turmas}\nEncontros: ${json.deleted_encontros}`);
+    } catch (err) {
+      alert('❌ Não consegui apagar.\n\n' + String(err.message || err));
+    } finally {
+      btnClear.disabled = false;
+      btnClear.textContent = "Apagar tudo";
+    }
+  }
+
+  btnClear?.addEventListener('click', apagarTodasArquivadas);
+
+  function abrirModalArquivadas() {
+    modalArquivadas.classList.add('is-open');
+    modalArquivadas.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('no-scroll');
+
+    const firstFocusable = modalArquivadas.querySelector("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])");
+    firstFocusable?.focus();
+  }
+
+  function fecharModalArquivadas() {
+    modalArquivadas.classList.remove('is-open');
+    modalArquivadas.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('no-scroll');
+    btnArquivado.focus();
+  }
+
+  btnArquivado.addEventListener('click', (e) => {
+    e.preventDefault();
+    abrirModalArquivadas();
+  });
+
+  modalArquivadas.addEventListener('click', (e) => {
+    if (e.target.matches('[data-close-arquivadas]')) {
+      fecharModalArquivadas();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalArquivadas.classList.contains('is-open')) {
+      fecharModalArquivadas();
+    }
+  });
+
+  // ---- Detecta progresso 100% e move pro modal ----
+  function getProgressoFromCard(card) {
+    // procura o <p> que contém "Progresso:"
+    const p = Array.from(card.querySelectorAll('.content-info'))
+      .find(el => (el.textContent || '').toLowerCase().includes('progresso'));
+
+    if (!p) return null;
+
+    // pega o primeiro número antes do %
+    const m = (p.textContent || '').match(/(\d{1,3})\s*%/);
+    if (!m) return null;
+
+    const n = parseInt(m[1], 10);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function atualizarArquivadas() {
+    const cards = Array.from(listaPrincipal.querySelectorAll('.card'));
+    let count = 0;
+
+    cards.forEach(card => {
+      const prog = getProgressoFromCard(card);
+      if (prog === 100) {
+        // move o card pra lista arquivadas
+        listaArquivadas.appendChild(card);
+        count++;
+      }
+    });
+
+    // mostra “vazio” se não tiver nenhum
+    const totalArquivadas = listaArquivadas.querySelectorAll('.card').length;
+    if (empty) empty.style.display = totalArquivadas ? 'none' : 'block';
+  }
+
+  // roda ao carregar a página
+  document.addEventListener('DOMContentLoaded', atualizarArquivadas);
+
+  // se seu sistema no futuro atualizar progresso via JS/AJAX,
+  // você pode chamar `atualizarArquivadas()` depois de atualizar os cards.
+  window.atualizarTurmasArquivadas = atualizarArquivadas;
+})();
+
+
 // === Helpers (usados em criar + editar) ===
 const mapDay = { seg: 1, ter: 2, qua: 3, qui: 4, sex: 5, sab: 6, dom: 7 };
 function fmtISO(d) { return d.toISOString().slice(0, 10); }
@@ -97,8 +227,9 @@ function jsDayToISOWeekday(d) { return ((d.getDay() + 6) % 7) + 1; } // 1..7
     };
 
     const total = datas.length;
-    const primeira = datas[0];
-    const ultima = datas[datas.length - 1];
+    const primeira = fmtBRFromISO(datas[0]);
+    const ultima = fmtBRFromISO(datas[datas.length - 1]);
+
 
     const hasProf = setProf.size > 0;
     const hasSala = setSala.size > 0;
@@ -124,7 +255,7 @@ function jsDayToISOWeekday(d) { return ((d.getDay() + 6) % 7) + 1; } // 1..7
           <div style="margin-top:8px;padding:10px 12px;border:1px solid rgba(176,0,0,.25);border-radius:10px;background:rgba(176,0,0,.06);">
             <div style="font-weight:900;">${titulo} em ${n} data(s)</div>
             <div style="margin-top:6px;line-height:1.25;">
-              ${amostra.map(d => `• ${d}`).join('<br>')}
+              ${amostra.map(d => `• ${fmtBRFromISO(d)}`).join('<br>')}
               ${resto > 0 ? `<br>• ... +${resto} datas` : ''}
             </div>
           </div>
@@ -148,7 +279,7 @@ function jsDayToISOWeekday(d) { return ((d.getDay() + 6) % 7) + 1; } // 1..7
       if (setSala.has(dt)) tags.push(`<span style="color:#b00;font-weight:800;">SALA</span>`);
       const tagStr = tags.length ? ` - ${tags.join(" / ")}` : "";
       const cor = tags.length ? "#b00" : "#111";
-      return `<div style="color:${cor};">${dt}${tagStr}</div>`;
+      return `<div style="color:${cor};">${fmtBRFromISO(dt)}${tagStr}</div>`;
     }).join("");
 
     elPreview.innerHTML = `
@@ -167,6 +298,13 @@ function jsDayToISOWeekday(d) { return ((d.getDay() + 6) % 7) + 1; } // 1..7
     const btnSubmit = form.querySelector('button[type="submit"]');
     if (btnSubmit) btnSubmit.disabled = hasConflito;
   }
+
+  function fmtBRFromISO(iso) {
+  if (!iso || typeof iso !== 'string') return '—';
+  const [y, m, d] = iso.split('-');
+  if (!y || !m || !d) return iso; // fallback
+  return `${d}/${m}/${y}`;
+}
 
   async function atualizarPreview() {
     const inicioISO = document.getElementById('data_inicio')?.value;
@@ -382,7 +520,7 @@ function renderPreviewEditar({ cargaHoraria, turno, datas, horasPorEncontro, hor
     if (setProf.has(dt)) tags.push('Professor');
     if (setSala.has(dt)) tags.push('Sala');
     const t = tags.length ? ` <span class="preview-tags">(${tags.join(' + ')})</span>` : '';
-    return `<div class="preview-linha ${tags.length ? 'is-conflito' : ''}">${dt}${t}</div>`;
+    return `<div class="preview-linha ${tags.length ? 'is-conflito' : ''}">${fmtBRFromISO(dt)}${t}</div>`;
   }).join('');
 
   el.innerHTML = `
@@ -390,7 +528,7 @@ function renderPreviewEditar({ cargaHoraria, turno, datas, horasPorEncontro, hor
     <div class="preview-meta">
       <div><b>Carga horária:</b> ${cargaHoraria}h</div>
       <div><b>Turno:</b> ${turno} | <b>Horas/encontro:</b> ${horasPorEncontro}h | <b>Encontros:</b> ${datas.length}</div>
-      <div><b>Primeiro:</b> ${datas[0]} | <b>Último:</b> ${datas[datas.length - 1]}</div>
+      <div><b>Primeiro:</b> ${fmtBRFromISO(datas[0])} | <b>Último:</b> ${fmtBRFromISO(datas[datas.length - 1])}</div>
       ${avisoUltimo}
     </div>
     <div class="preview-lista">${linhas}</div>
