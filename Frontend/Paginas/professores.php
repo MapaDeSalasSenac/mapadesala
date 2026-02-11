@@ -181,7 +181,7 @@
             <div class="info">
               <p class="linha-info"><strong>Formação:</strong> <?= htmlspecialchars($formacao) ?></p>
 
-              <p class="linha-info"><strong>Cursos complementares:</strong> <?= htmlspecialchars($compl) ?></p>
+              <p class="linha-info"><strong>Área de Atuação:</strong> <?= htmlspecialchars($compl) ?></p>
 
               <p class="linha-info"><strong>Telefone:</strong> <?= htmlspecialchars(textoOuTraco($row["telefone"] ?? "")) ?></p>
 
@@ -242,7 +242,7 @@
           </div>
 
           <div class="inputs">
-            <label for="text">Cursos Complementares</label>
+            <label for="text">Área de Atuação</label>
             <input type="text" name="cursosCompl" class="inputCompl" id="inputCompl" placeholder="Ex: Beleza, Estética, Informática...">
           </div>
 

@@ -307,7 +307,7 @@ $result = mysqli_query($conexao, $sql);
                         <input type="date" name="data_inicio" id="data_inicio" required>
                     </div>
                     <div class="form-group">
-                        <label>Grade curricular</label>
+                        <label>Carga horária</label>
                         <input type="number" name="carga_horaria" id="carga_horaria" min="1" required placeholder="Ex: 80">
                     </div>
                     <div class="form-group">
@@ -395,7 +395,7 @@ $result = mysqli_query($conexao, $sql);
                         <small style="color:#666;">Data a partir da qual os encontros serão recalculados</small>
                     </div>
                     <div class="form-group">
-                        <label>Grade curricular</label>
+                        <label>Carga horária</label>
                         <input type="number" name="carga_horaria" id="edit_carga_horaria" min="1" required>
                     </div>
                     <div class="form-group">
