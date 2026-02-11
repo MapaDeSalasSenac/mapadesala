@@ -36,6 +36,7 @@
     $t = trim((string)$txt);
     return $t === "" ? "—" : $t;
   }
+  $erroMsg = isset($_GET["erro"]) ? (string)$_GET["erro"] : "";
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -57,6 +58,10 @@
 </head>
 
 <body>
+  <script>
+    // Erro retornado do PHP (ex.: duplicidade). O JS decide como exibir.
+    window.__PROF_ERRO__ = <?= json_encode($erroMsg) ?>;
+  </script>
   <!-- TOPBAR PADRÃO -->
   <header class="barra-topo">
     <button class="botao-menu" id="botao-menu" aria-label="Abrir menu" aria-expanded="false">☰</button>
@@ -178,7 +183,7 @@
 
           <div class="inputs">
             <label for="Telefone">Telefone</label>
-            <input type="text" name="telefone" class="inputTel" id="inputTel" placeholder="Digite o número" maxlength="15" required>
+            <input type="text" name="telefone" class="inputTel" id="inputTel" placeholder="(99) 9 9999-9999" maxlength="16" required>
           </div>
 
           <div class="inputs">
@@ -191,7 +196,8 @@
             <input type="text" name="cursosCompl" class="inputCompl" id="inputCompl" placeholder="Ex: Beleza, Estética, Informática...">
           </div>
 
-          <button type="submit" class="buttonCriar">Criar</button>
+          <button type="submit" class="buttonCriar" id="btnSalvarProfessor">Criar</button>
+          <small class="msg-erro" id="msgErroProfessor" aria-live="polite"></small>
         </form>
       </div>
     </div>

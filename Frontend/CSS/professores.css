@@ -228,6 +228,31 @@ to { transform: scale(1); opacity: 1; }}
   margin-top: 10px;
 }
 
+.buttonCriar[disabled] {
+  background-color: #cfcfcf;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.buttonCriar[disabled]:hover {
+  background-color: #cfcfcf;
+  transform: none;
+  box-shadow: none;
+}
+
+.msg-erro {
+  display: none;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b3261e;
+}
+
+.msg-erro.ativo {
+  display: block;
+}
+
 .buttonCriar:hover {
   background-color: #e66e00;
   transform: translateY(-2px);

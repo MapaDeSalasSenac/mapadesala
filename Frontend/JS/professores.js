@@ -1,6 +1,122 @@
 const modal = document.getElementById("meuModal");
 const btnAbrir = document.getElementById("btnAbrir");
 
+// Máscara/validação usam esse input
+const inputTel = document.getElementById('inputTel');
+
+// =========================
+// VALIDAÇÃO (duplicidade) + UX (desabilitar salvar)
+// =========================
+const formProfessor = modal?.querySelector('form');
+const inputNome = document.getElementById('nomeProfessor');
+const inputEmail = document.getElementById('inputEmail');
+const inputIdProfessor = document.getElementById('idProfessor');
+const btnSalvarProfessor = document.getElementById('btnSalvarProfessor');
+const msgErroProfessor = document.getElementById('msgErroProfessor');
+
+function onlyDigits(v) {
+  return (v || '').toString().replace(/\D/g, '');
+}
+
+function normText(v) {
+  return (v || '').toString().trim().toLowerCase();
+}
+
+function listarProfessoresExistentes() {
+  return Array.from(document.querySelectorAll('.card[data-id]')).map((card) => {
+    return {
+      id: (card.dataset.id || '').toString(),
+      nome: normText(card.dataset.nome || ''),
+      email: normText(card.dataset.email || ''),
+      tel: onlyDigits(card.dataset.telefone || ''),
+    };
+  });
+}
+
+function setErroProfessor(msg) {
+  if (!msgErroProfessor || !btnSalvarProfessor) return;
+  const temErro = !!(msg && msg.trim());
+  msgErroProfessor.textContent = temErro ? msg : '';
+  msgErroProfessor.classList.toggle('ativo', temErro);
+  btnSalvarProfessor.disabled = temErro;
+  btnSalvarProfessor.classList.toggle('desabilitado', temErro);
+}
+
+function validarDuplicidadeProfessor() {
+  // Se os elementos não existirem (página quebrada), não faz nada
+  if (!inputNome || !inputEmail || !inputTel || !btnSalvarProfessor) return;
+
+  const idAtual = (inputIdProfessor?.value || '').toString();
+  const nome = normText(inputNome.value);
+  const email = normText(inputEmail.value);
+  const tel = onlyDigits(inputTel.value);
+
+  const existentes = listarProfessoresExistentes().filter(p => p.id !== idAtual);
+
+  // Prioridade: telefone -> email -> nome (porque telefone é mais “único” e dá menos ambiguidade)
+  if (tel && existentes.some(p => p.tel && p.tel === tel)) {
+    setErroProfessor('Já existe alguém cadastrado com esse número de celular.');
+    return;
+  }
+  if (email && existentes.some(p => p.email && p.email === email)) {
+    setErroProfessor('Já existe alguém cadastrado com esse email.');
+    return;
+  }
+  if (nome && existentes.some(p => p.nome && p.nome === nome)) {
+    setErroProfessor('Já existe alguém cadastrado com esse nome.');
+    return;
+  }
+
+  setErroProfessor('');
+}
+
+
+// Máscara: (99) 9 9999-9999
+function formatCel(value) {
+  const digits = (value || '').replace(/\D/g, '').slice(0, 11);
+  const ddd = digits.slice(0, 2);
+  const n9  = digits.slice(2, 3);
+  const p1  = digits.slice(3, 7);
+  const p2  = digits.slice(7, 11);
+
+  let out = '';
+  if (ddd) out += '(' + ddd;
+  if (ddd.length === 2) out += ') ';
+  if (n9) out += n9 + ' ';
+  if (p1) out += p1;
+  if (p2) out += '-' + p2;
+  return out.trimEnd();
+}
+
+if (inputTel) {
+  inputTel.addEventListener('input', (e) => {
+    const start = inputTel.selectionStart;
+    const before = inputTel.value;
+    const formatted = formatCel(before);
+    inputTel.value = formatted;
+    // tenta manter cursor razoável
+    const diff = formatted.length - before.length;
+    inputTel.setSelectionRange((start ?? formatted.length) + diff, (start ?? formatted.length) + diff);
+  });
+}
+
+// Revalida enquanto o usuário digita
+[inputNome, inputEmail, inputTel].forEach((el) => {
+  if (!el) return;
+  el.addEventListener('input', validarDuplicidadeProfessor);
+  el.addEventListener('blur', validarDuplicidadeProfessor);
+});
+
+// Não deixa enviar se o botão estiver desabilitado (UX)
+formProfessor?.addEventListener('submit', (e) => {
+  validarDuplicidadeProfessor();
+  if (btnSalvarProfessor?.disabled) {
+    e.preventDefault();
+    // garante que a mensagem esteja visível
+    msgErroProfessor?.classList.add('ativo');
+  }
+});
+
 function abrirModal() {
   modal.classList.add("is-open");
   modal.setAttribute("aria-hidden", "false");
@@ -26,6 +142,9 @@ btnAbrir.addEventListener("click", () => {
   if (inputId) inputId.value = "";
 
   modal.querySelector("form")?.reset();
+  setErroProfessor('');
+  // garante botão habilitado no modo criar
+  if (btnSalvarProfessor) btnSalvarProfessor.disabled = false;
   abrirModal();
 });
 
@@ -60,6 +179,11 @@ document.addEventListener("click", (e) => {
   document.getElementById("inputTel").value = card.dataset.telefone || "";
   document.getElementById("inputEmail").value = card.dataset.email || "";
   document.getElementById("inputCompl").value = card.dataset.cursos || "";
+
+  // revalida no modo editar (ignora o próprio ID)
+  setErroProfessor('');
+  if (btnSalvarProfessor) btnSalvarProfessor.disabled = false;
+  validarDuplicidadeProfessor();
 
   abrirModal(); // usa a função padrão (no-scroll + focus)
 });
@@ -213,3 +337,13 @@ document.addEventListener("keydown", (e) => {
     abrir();
   });
 })();
+
+// Se o PHP devolveu erro (ex.: tentou salvar duplicado),
+// mostra a mensagem no próprio modal e impede novo envio até ajustar.
+document.addEventListener('DOMContentLoaded', () => {
+  const msg = (window.__PROF_ERRO__ || '').toString().trim();
+  if (!msg) return;
+  // abre o modal em modo "cadastrar" (o usuário pode corrigir e salvar)
+  setErroProfessor(msg);
+  abrirModal();
+});
