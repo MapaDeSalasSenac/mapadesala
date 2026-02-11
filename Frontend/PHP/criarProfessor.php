@@ -1,6 +1,75 @@
 <?php
 require 'conexao.php';
 
+// Garante a coluna de foto (compatível com bancos antigos)
+$chk = $conexao->query("SHOW COLUMNS FROM professores LIKE 'foto'");
+if (!($chk && $chk->num_rows > 0)) {
+    @ $conexao->query("ALTER TABLE professores ADD COLUMN foto VARCHAR(255) NULL");
+}
+
+function ensureDir(string $path): void {
+    if (!is_dir($path)) {
+        @mkdir($path, 0775, true);
+    }
+}
+
+
+function saveProfessorPhotoFromBase64(string $dataUrl, string $uploadDirAbs): ?string {
+    $dataUrl = trim($dataUrl);
+    if ($dataUrl === '') return null;
+
+    if (!preg_match('/^data:image\/(png|jpeg|jpg|webp);base64,/', $dataUrl, $m)) return null;
+    $ext = $m[1] === 'jpeg' ? 'jpg' : $m[1];
+
+    $base64 = preg_replace('/^data:image\/(png|jpeg|jpg|webp);base64,/', '', $dataUrl);
+    $bin = base64_decode($base64, true);
+    if ($bin === false) return null;
+
+    // Limite 2MB
+    if (strlen($bin) > 2 * 1024 * 1024) {
+        backWithError("A foto é muito grande (máx 2MB).");
+    }
+
+    ensureDir($uploadDirAbs);
+
+    $name = "prof_" . date("Ymd_His") . "_" . bin2hex(random_bytes(3)) . "." . $ext;
+    $dest = rtrim($uploadDirAbs, "/\\") . DIRECTORY_SEPARATOR . $name;
+
+    if (@file_put_contents($dest, $bin) === false) return null;
+
+    return $name;
+}
+
+function saveProfessorPhoto(array $file, string $uploadDirAbs): ?string {
+    if (!isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) return null;
+    if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) return null;
+
+    // Limites básicos (2MB)
+    if (isset($file['size']) && (int)$file['size'] > 2 * 1024 * 1024) {
+        backWithError("A foto é muito grande (máx 2MB).");
+    }
+
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime = $finfo->file($file['tmp_name']);
+    $allowed = [
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp',
+    ];
+    if (!isset($allowed[$mime])) {
+        backWithError("Formato de foto inválido. Use JPG, PNG ou WEBP.");
+    }
+
+    ensureDir($uploadDirAbs);
+    $ext = $allowed[$mime];
+    $name = 'prof_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+    $dest = rtrim($uploadDirAbs, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $name;
+    if (!move_uploaded_file($file['tmp_name'], $dest)) {
+        backWithError("Não foi possível salvar a foto.");
+    }
+    return $name;
+}
+
 function onlyDigits(string $v): string {
     return preg_replace('/\D+/', '', $v) ?? '';
 }
@@ -21,6 +90,11 @@ function backWithError(string $msg): void {
     exit;
 }
 
+if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+    header("Location: ../Paginas/professores.php");
+    exit;
+}
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $id = isset($_POST["idProfessor"]) ? (int)$_POST["idProfessor"] : 0;
 
@@ -29,6 +103,33 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $telefoneRaw = trim($_POST["telefone"] ?? "");
     $email = strtolower(trim($_POST["email"] ?? ""));
     $cursosComp = trim($_POST["cursosCompl"] ?? "");
+    $fotoAtual = trim($_POST['fotoAtual'] ?? '');
+
+    // Upload de foto (se houver)
+    $uploadDirAbs = realpath(__DIR__ . '/../IMG') . DIRECTORY_SEPARATOR . 'professores';
+    $baseImg = __DIR__ . '/../IMG/professores';
+    $novaFoto = null;
+
+    // Preferência: foto recortada (base64) vinda do modal
+    $fotoCortada = trim($_POST['fotoCortada'] ?? '');
+    if ($fotoCortada !== '') {
+        $novaFoto = saveProfessorPhotoFromBase64($fotoCortada, $baseImg);
+    } elseif (isset($_FILES['fotoProfessor'])) {
+        $novaFoto = saveProfessorPhoto($_FILES['fotoProfessor'], $baseImg);
+    }
+// Se substituiu a foto, apaga a antiga
+    $fotoFinal = $fotoAtual;
+
+    // Foto recortada (base64 vindo do modal)
+    $fotoCortada = trim($_POST['fotoCortada'] ?? '');
+
+    if ($novaFoto) {
+        $fotoFinal = $novaFoto;
+        if ($fotoAtual) {
+            $old = __DIR__ . '/../IMG/professores/' . $fotoAtual;
+            if (is_file($old)) @unlink($old);
+        }
+    }
 
     // Validações básicas
     if ($nomeProfessor === "") backWithError("Nome do professor é obrigatório.");
@@ -80,16 +181,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if ($id > 0) {
         // UPDATE
         $sql = "UPDATE professores
-                SET nome = ?, formacao = ?, telefone = ?, email = ?, cursos_complementares = ?
+                SET nome = ?, formacao = ?, telefone = ?, email = ?, cursos_complementares = ?, foto = ?
                 WHERE id_professor = ?";
         $stmt = $conexao->prepare($sql);
-        $stmt->bind_param("sssssi", $nomeProfessor, $formacao, $telefone, $email, $cursosComp, $id);
+        $stmt->bind_param("ssssssi", $nomeProfessor, $formacao, $telefone, $email, $cursosComp, $fotoFinal, $id);
     } else {
         // INSERT
-        $sql = "INSERT INTO professores (nome, formacao, telefone, email, cursos_complementares)
-                VALUES (?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO professores (nome, formacao, telefone, email, cursos_complementares, foto)
+                VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $conexao->prepare($sql);
-        $stmt->bind_param("sssss", $nomeProfessor, $formacao, $telefone, $email, $cursosComp);
+        $stmt->bind_param("ssssss", $nomeProfessor, $formacao, $telefone, $email, $cursosComp, $fotoFinal);
     }
 
     if ($stmt->execute()) {

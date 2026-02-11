@@ -37,7 +37,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $_SESSION['id_usuario'] = $usuario['id_usuario'];
             $_SESSION['email'] = $email;
 
-            header("Location: ../Paginas/mapadesala.html");
+            header("Location: ../Paginas/mapadesala.php");
             exit;
 
         } else {

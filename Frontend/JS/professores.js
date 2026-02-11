@@ -14,6 +14,233 @@ const inputIdProfessor = document.getElementById('idProfessor');
 const btnSalvarProfessor = document.getElementById('btnSalvarProfessor');
 const msgErroProfessor = document.getElementById('msgErroProfessor');
 
+// =========================
+// FOTO DO PROFESSOR (modal + card)
+// =========================
+const fotoPreview = document.getElementById('fotoPreview');
+const inputFoto = document.getElementById('inputFoto');
+const inputFotoAtual = document.getElementById('fotoAtual');
+
+const fotoViewer = document.getElementById('fotoViewer');
+const fotoViewerImg = document.getElementById('fotoViewerImg');
+
+function setFotoPreviewUrl(url) {
+  if (!fotoPreview) return;
+  if (url) {
+    fotoPreview.innerHTML = `<img src="${url}" alt="Foto selecionada">`;
+  } else {
+    fotoPreview.innerHTML = `<span class="foto-preview__txt">Adicionar foto</span>`;
+  }
+}
+
+function abrirFotoViewer(url) {
+  if (!fotoViewer || !fotoViewerImg || !url) return;
+  fotoViewerImg.src = url;
+  fotoViewer.classList.add('is-open');
+  fotoViewer.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('no-scroll');
+}
+
+function fecharFotoViewer() {
+  if (!fotoViewer) return;
+  fotoViewer.classList.remove('is-open');
+  fotoViewer.setAttribute('aria-hidden', 'true');
+  if (fotoViewerImg) fotoViewerImg.removeAttribute('src');
+  document.body.classList.remove('no-scroll');
+}
+
+
+// ---- CROP (estilo Discord) ----
+const cropModal = document.getElementById('cropModal');
+const cropCanvas = document.getElementById('cropCanvas');
+const cropZoom = document.getElementById('cropZoom');
+const btnCropApply = document.getElementById('btnCropApply');
+const btnCropReset = document.getElementById('btnCropReset');
+const btnCropRotate = document.getElementById('btnCropRotate');
+const inputFotoCortada = document.getElementById('fotoCortada');
+
+let cropImg = null;
+let cropImgLoaded = false;
+
+let cropState = {
+  zoom: 1,
+  rot: 0, // radians
+  offX: 0,
+  offY: 0,
+  baseScale: 1,
+  cropSize: 220, // px (área do recorte no canvas)
+  dragging: false,
+  lastX: 0,
+  lastY: 0,
+};
+
+function openCropModal() {
+  if (!cropModal) return;
+  cropModal.classList.add('is-open');
+  cropModal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('no-scroll');
+}
+
+function closeCropModal() {
+  if (!cropModal) return;
+  cropModal.classList.remove('is-open');
+  cropModal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('no-scroll');
+}
+
+function fitCropImage() {
+  if (!cropCanvas || !cropImgLoaded) return;
+  const w = cropImg.width;
+  const h = cropImg.height;
+  const target = cropState.cropSize;
+
+  // garante que a imagem preencha o recorte
+  cropState.baseScale = Math.max(target / w, target / h);
+  cropState.zoom = 1;
+  cropState.offX = 0;
+  cropState.offY = 0;
+  cropState.rot = 0;
+  if (cropZoom) cropZoom.value = '1';
+}
+
+function drawCrop() {
+  if (!cropCanvas) return;
+  const ctx = cropCanvas.getContext('2d');
+  if (!ctx) return;
+
+  ctx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
+
+  if (!cropImgLoaded) return;
+
+  const cx = cropCanvas.width / 2;
+  const cy = cropCanvas.height / 2;
+
+  const s = cropState.baseScale * cropState.zoom;
+
+  ctx.save();
+  ctx.translate(cx + cropState.offX, cy + cropState.offY);
+  ctx.rotate(cropState.rot);
+  ctx.scale(s, s);
+  ctx.drawImage(cropImg, -cropImg.width / 2, -cropImg.height / 2);
+  ctx.restore();
+}
+
+function loadImageToCropper(dataUrl) {
+  cropImgLoaded = false;
+  cropImg = new Image();
+  cropImg.onload = () => {
+    cropImgLoaded = true;
+    fitCropImage();
+    drawCrop();
+    openCropModal();
+  };
+  cropImg.src = dataUrl;
+}
+
+function exportCroppedPng() {
+  if (!cropImgLoaded) return null;
+
+  const out = document.createElement('canvas');
+  out.width = 512;
+  out.height = 512;
+  const octx = out.getContext('2d');
+  if (!octx) return null;
+
+  // mapeia pixels do canvas de recorte -> saída
+  const scaleOut = 512 / cropState.cropSize;
+  const s = cropState.baseScale * cropState.zoom * scaleOut;
+
+  octx.save();
+  octx.translate(256 + cropState.offX * scaleOut, 256 + cropState.offY * scaleOut);
+  octx.rotate(cropState.rot);
+  octx.scale(s, s);
+  octx.drawImage(cropImg, -cropImg.width / 2, -cropImg.height / 2);
+  octx.restore();
+
+  return out.toDataURL('image/png', 0.92);
+}
+
+// abre seletor clicando no círculo
+fotoPreview?.addEventListener('click', () => inputFoto?.click());
+
+// ao escolher imagem: abre o recorte
+inputFoto?.addEventListener('change', () => {
+  const file = inputFoto.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    // arquivo inválido
+    inputFoto.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const url = reader.result?.toString() || '';
+    if (!url) return;
+    loadImageToCropper(url);
+  };
+  reader.readAsDataURL(file);
+});
+
+// controles do recorte
+cropZoom?.addEventListener('input', () => {
+  cropState.zoom = parseFloat(cropZoom.value || '1');
+  drawCrop();
+});
+
+btnCropRotate?.addEventListener('click', () => {
+  cropState.rot += Math.PI / 2;
+  drawCrop();
+});
+
+btnCropReset?.addEventListener('click', () => {
+  fitCropImage();
+  drawCrop();
+});
+
+btnCropApply?.addEventListener('click', () => {
+  const dataUrl = exportCroppedPng();
+  if (!dataUrl) return;
+
+  // grava no hidden (backend salva isso)
+  if (inputFotoCortada) inputFotoCortada.value = dataUrl;
+
+  // atualiza preview no modal principal
+  setFotoPreviewUrl(dataUrl);
+
+  closeCropModal();
+});
+
+// fechar modal de recorte
+document.addEventListener('click', (e) => {
+  if (e.target && e.target.matches('[data-crop-close]')) closeCropModal();
+});
+
+// arrastar a imagem no recorte
+cropCanvas?.addEventListener('pointerdown', (e) => {
+  cropState.dragging = true;
+  cropState.lastX = e.clientX;
+  cropState.lastY = e.clientY;
+  cropCanvas.setPointerCapture(e.pointerId);
+});
+
+cropCanvas?.addEventListener('pointermove', (e) => {
+  if (!cropState.dragging) return;
+  const dx = e.clientX - cropState.lastX;
+  const dy = e.clientY - cropState.lastY;
+  cropState.lastX = e.clientX;
+  cropState.lastY = e.clientY;
+  cropState.offX += dx;
+  cropState.offY += dy;
+  drawCrop();
+});
+
+cropCanvas?.addEventListener('pointerup', () => {
+  cropState.dragging = false;
+});
+
+
 function onlyDigits(v) {
   return (v || '').toString().replace(/\D/g, '');
 }
@@ -142,6 +369,10 @@ btnAbrir.addEventListener("click", () => {
   if (inputId) inputId.value = "";
 
   modal.querySelector("form")?.reset();
+  // Foto (modo criar)
+  if (inputFotoAtual) inputFotoAtual.value = '';
+  if (inputFoto) inputFoto.value = '';
+  setFotoPreviewUrl('');
   setErroProfessor('');
   // garante botão habilitado no modo criar
   if (btnSalvarProfessor) btnSalvarProfessor.disabled = false;
@@ -159,6 +390,16 @@ modal.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && modal.classList.contains("is-open")) {
     fecharModal();
+  }
+});
+
+// Fecha visualizador de foto
+fotoViewer?.addEventListener('click', (e) => {
+  if (e.target.matches('[data-viewer-close]')) fecharFotoViewer();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && fotoViewer?.classList.contains('is-open')) {
+    fecharFotoViewer();
   }
 });
 document.addEventListener("click", (e) => {
@@ -180,12 +421,29 @@ document.addEventListener("click", (e) => {
   document.getElementById("inputEmail").value = card.dataset.email || "";
   document.getElementById("inputCompl").value = card.dataset.cursos || "";
 
+  // Foto (modo editar)
+  const foto = (card.dataset.foto || '').trim();
+  if (inputFotoAtual) inputFotoAtual.value = foto;
+  if (inputFoto) inputFoto.value = '';
+  setFotoPreviewUrl(foto ? `../IMG/professores/${foto}` : '');
+
   // revalida no modo editar (ignora o próprio ID)
   setErroProfessor('');
   if (btnSalvarProfessor) btnSalvarProfessor.disabled = false;
   validarDuplicidadeProfessor();
 
   abrirModal(); // usa a função padrão (no-scroll + focus)
+});
+
+// Clique na miniatura do card abre a foto em tamanho maior
+document.addEventListener('click', (e) => {
+  const avatar = e.target.closest('.card .avatar');
+  if (!avatar) return;
+  const card = avatar.closest('.card');
+  if (!card) return;
+  const foto = (card.dataset.foto || '').trim();
+  if (!foto) return;
+  abrirFotoViewer(`../IMG/professores/${foto}`);
 });
 // =========================
 // EXCLUIR PROFESSOR

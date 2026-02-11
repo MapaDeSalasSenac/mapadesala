@@ -1,5 +1,22 @@
 <?php
+  // Sessão é necessária aqui para mostrar corretamente o link de Administração no aside
+  if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+  }
+
   require "../PHP/conexao.php";
+
+  // Garante que a coluna de foto exista (não mexe em sessão; só evita erro no SELECT)
+  $hasFotoCol = false;
+  $chk = $conexao->query("SHOW COLUMNS FROM professores LIKE 'foto'");
+  if ($chk && $chk->num_rows > 0) {
+    $hasFotoCol = true;
+  } else {
+    // Se não existir, tenta criar. Se falhar por permissão, seguimos sem foto.
+    @$conexao->query("ALTER TABLE professores ADD COLUMN foto VARCHAR(255) NULL");
+    $chk2 = $conexao->query("SHOW COLUMNS FROM professores LIKE 'foto'");
+    if ($chk2 && $chk2->num_rows > 0) $hasFotoCol = true;
+  }
 
   $sql = "
     SELECT
@@ -8,13 +25,13 @@
       p.formacao,
       p.telefone,
       p.email,
-      p.cursos_complementares,
+      p.cursos_complementares" . ($hasFotoCol ? ",\n      p.foto" : "") . ",
       GROUP_CONCAT(DISTINCT t.nome_turma ORDER BY t.nome_turma SEPARATOR ', ') AS turmas,
       GROUP_CONCAT(DISTINCT t.turno ORDER BY t.turno SEPARATOR ', ') AS turnos
     FROM professores p
     LEFT JOIN turmas t ON t.id_professor = p.id_professor
     GROUP BY
-      p.id_professor, p.nome, p.formacao, p.telefone, p.email, p.cursos_complementares
+      p.id_professor, p.nome, p.formacao, p.telefone, p.email, p.cursos_complementares" . ($hasFotoCol ? ", p.foto" : "") . "
   ";
 
   $result = $conexao->query($sql);
@@ -77,11 +94,15 @@
   <aside class="barra-lateral">
     <nav class="nav-lateral">
       <ul>
-        <li class="item-nav"><a href="mapadesala.html" class="conteudo-barra-lateral">Mapa de Salas</a></li>
+        <li class="item-nav"><a href="mapadesala.php" class="conteudo-barra-lateral">Mapa de Salas</a></li>
         <li class="item-nav ativo"><a href="professores.php" class="conteudo-barra-lateral">Professores</a></li>
         <li class="item-nav"><a href="salas.php" class="conteudo-barra-lateral">Salas</a></li>
         <li class="item-nav"><a href="turmas.php" class="conteudo-barra-lateral">Turmas</a></li>
-        <li class="item-nav"><a href="creditos.html" class="conteudo-barra-lateral">Créditos</a></li>
+        <?php if (isset($_SESSION['id_usuario']) && (int)$_SESSION['id_usuario'] === 1): ?>
+          <li class="item-nav<?php echo (strpos(strtolower($_SERVER['PHP_SELF']), 'adm.php') !== false) ? ' ativo' : ''; ?>"><a href="adm.php" class="conteudo-barra-lateral">Administração</a></li>
+        <?php endif; ?>
+
+        <li class="item-nav"><a href="creditos.php" class="conteudo-barra-lateral">Créditos</a></li>
       </ul>
     </nav>
 
@@ -118,6 +139,7 @@
             $turnos = turnoBonito($row["turnos"] ?? "");
             $formacao = textoOuTraco($row["formacao"] ?? "");
             $compl = textoOuTraco($row["cursos_complementares"] ?? "");
+            $foto = $hasFotoCol ? trim((string)($row["foto"] ?? "")) : "";
           ?>
           <div class="card"
             data-id="<?= (int)$row['id_professor'] ?>"
@@ -126,17 +148,34 @@
             data-telefone="<?= htmlspecialchars($row['telefone']) ?>"
             data-email="<?= htmlspecialchars($row['email']) ?>"
             data-cursos="<?= htmlspecialchars($row['cursos_complementares'] ?? '') ?>"
+            data-foto="<?= htmlspecialchars($foto) ?>"
           >
 
-            <button class="icon-btn edit btn-edit" type="button" title="Editar professor"><img src="../IMG/lapisIcon.png" alt="Editar"></button>
-            <button type="button" class="icon-btn delete btn-delete" title="Excluir professor"
-              data-id="<?= (int)$row['id_professor'] ?>"
-              data-nome="<?= htmlspecialchars($row['nome']) ?>"
-            >
-              <img src="../IMG/lixeiraIcon.png" alt="excluir">
-            </button>
+            <!-- Cabeçalho do card -->
+            <div class="card-header">
+              <button class="avatar" type="button" title="Ver foto" aria-label="Ver foto">
+                <?php if ($foto !== "" && file_exists(__DIR__ . "/../IMG/professores/" . $foto)): ?>
+                  <img src="../IMG/professores/<?= htmlspecialchars($foto) ?>" alt="Foto de <?= htmlspecialchars($row['nome']) ?>" />
+                <?php else: ?>
+                  <span class="avatar__fallback" aria-hidden="true">SEM FOTO</span>
+                <?php endif; ?>
+              </button>
 
-            <h3 class="professor-nome"><?= htmlspecialchars($row["nome"] ?? "") ?></h3>
+              <h3 class="professor-nome"><?= htmlspecialchars($row["nome"] ?? "") ?></h3>
+
+              <div class="card-actions">
+                <button class="icon-btn edit btn-edit" type="button" title="Editar professor">
+                  <img src="../IMG/lapisIcon.png" alt="Editar">
+                </button>
+
+                <button type="button" class="icon-btn delete btn-delete" title="Excluir professor"
+                  data-id="<?= (int)$row['id_professor'] ?>"
+                  data-nome="<?= htmlspecialchars($row['nome']) ?>"
+                >
+                  <img src="../IMG/lixeiraIcon.png" alt="excluir">
+                </button>
+              </div>
+            </div>
             <div class="line"></div>
 
             <div class="info">
@@ -169,8 +208,19 @@
       </header>
 
       <div class="modal__body">
-        <form action="../PHP/criarProfessor.php" method="POST">
+        <form action="../PHP/criarProfessor.php" method="POST" enctype="multipart/form-data">
           <input type="hidden" name="idProfessor" id="idProfessor" value="">
+          <input type="hidden" name="fotoAtual" id="fotoAtual" value="">
+
+          <!-- Foto do professor (preview redondo, clicável) -->
+          <div class="foto-box">
+            <button type="button" class="foto-preview" id="fotoPreview" aria-label="Selecionar foto">
+              <span class="foto-preview__txt">Adicionar foto</span>
+            </button>
+            <input type="file" name="fotoProfessor" id="inputFoto" accept="image/*" hidden>
+            <input type="hidden" name="fotoCortada" id="fotoCortada" value="">
+            <small class="foto-ajuda">Clique no círculo para escolher/alterar a foto</small>
+          </div>
           <div class="inputs">
             <label for="nomeProfessor">Nome do Professor</label>
             <input type="text" name="nomeProfessor" class="nome_prof" id="nomeProfessor" placeholder="Digite o nome" required>
@@ -226,6 +276,55 @@
     </div>
   </div>
 </div>
+
+<!-- VISUALIZADOR DE FOTO -->
+<div class="foto-viewer" id="fotoViewer" aria-hidden="true">
+  <div class="foto-viewer__backdrop" data-viewer-close></div>
+  <div class="foto-viewer__content" role="dialog" aria-modal="true" aria-label="Foto do professor">
+    <button class="foto-viewer__close" type="button" aria-label="Fechar" data-viewer-close>×</button>
+    <img id="fotoViewerImg" alt="Foto do professor">
+  </div>
+</div>
+
+
+  <!-- Modal de recorte de foto (estilo Discord) -->
+  <div class="crop-modal" id="cropModal" aria-hidden="true">
+    <div class="crop-modal__backdrop" data-crop-close></div>
+
+    <div class="crop-modal__content" role="dialog" aria-modal="true" aria-label="Editar imagem">
+      <div class="crop-modal__header">
+        <h3>Editar imagem</h3>
+        <button type="button" class="crop-modal__close" data-crop-close aria-label="Fechar">✕</button>
+      </div>
+
+      <div class="crop-modal__body">
+        <div class="crop-stage">
+          <canvas id="cropCanvas" width="520" height="300"></canvas>
+          <div class="crop-overlay" aria-hidden="true"></div>
+        </div>
+
+        <div class="crop-controls">
+          <button type="button" class="crop-btn" id="btnCropRotate" title="Girar 90°">↻</button>
+          <input type="range" id="cropZoom" min="1" max="3" step="0.01" value="1" aria-label="Zoom">
+          <button type="button" class="crop-btn" id="btnCropReset">Redefinir</button>
+        </div>
+      </div>
+
+      <div class="crop-modal__footer">
+        <button type="button" class="btn-sec" data-crop-close>Cancelar</button>
+        <button type="button" class="btn-pri" id="btnCropApply">Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Visualizador simples da foto (clique na miniatura) -->
+  <div class="photo-viewer" id="photoViewer" aria-hidden="true">
+    <div class="photo-viewer__backdrop" data-viewer-close></div>
+    <div class="photo-viewer__content">
+      <button type="button" class="photo-viewer__close" data-viewer-close aria-label="Fechar">✕</button>
+      <img id="photoViewerImg" alt="Foto do professor">
+    </div>
+  </div>
 
 </body>
 </html>
