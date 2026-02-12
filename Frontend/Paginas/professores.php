@@ -53,6 +53,7 @@
     $t = trim((string)$txt);
     return $t === "" ? "—" : $t;
   }
+
   $erroMsg = isset($_GET["erro"]) ? (string)$_GET["erro"] : "";
 ?>
 <!DOCTYPE html>
@@ -68,9 +69,20 @@
   <script src="../JS/padrao.js" defer></script>
   <script src="../JS/professores.js?v=<?= filemtime(__DIR__ . '/../JS/professores.js') ?>" defer></script>
 
-
   <style>
     .modal { width: 100%; background: none; }
+
+    /* fallback da inicial (caso seu CSS não tenha) */
+    .avatar__fallback{
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 18px;
+      text-transform: uppercase;
+      line-height: 1;
+    }
   </style>
 </head>
 
@@ -79,6 +91,7 @@
     // Erro retornado do PHP (ex.: duplicidade). O JS decide como exibir.
     window.__PROF_ERRO__ = <?= json_encode($erroMsg) ?>;
   </script>
+
   <!-- TOPBAR PADRÃO -->
   <header class="barra-topo">
     <button class="botao-menu" id="botao-menu" aria-label="Abrir menu" aria-expanded="false">☰</button>
@@ -87,7 +100,9 @@
       <img src="../IMG/senac_logo_branco.png" alt="Senac" />
     </div>
 
-    <button class="botao-usuario" id="botao-usuario" aria-label="Usuário" aria-expanded="false"><img src="../IMG/usuarioIcon.png" alt="Usuário"></button>
+    <button class="botao-usuario" id="botao-usuario" aria-label="Usuário" aria-expanded="false">
+      <img src="../IMG/usuarioIcon.png" alt="Usuário">
+    </button>
   </header>
 
   <!-- SIDEBAR PADRÃO -->
@@ -98,8 +113,11 @@
         <li class="item-nav ativo"><a href="professores.php" class="conteudo-barra-lateral">Professores</a></li>
         <li class="item-nav"><a href="salas.php" class="conteudo-barra-lateral">Salas</a></li>
         <li class="item-nav"><a href="turmas.php" class="conteudo-barra-lateral">Turmas</a></li>
+
         <?php if (isset($_SESSION['id_usuario']) && (int)$_SESSION['id_usuario'] === 1): ?>
-          <li class="item-nav<?php echo (strpos(strtolower($_SERVER['PHP_SELF']), 'adm.php') !== false) ? ' ativo' : ''; ?>"><a href="adm.php" class="conteudo-barra-lateral">Administração</a></li>
+          <li class="item-nav<?php echo (strpos(strtolower($_SERVER['PHP_SELF']), 'adm.php') !== false) ? ' ativo' : ''; ?>">
+            <a href="adm.php" class="conteudo-barra-lateral">Administração</a>
+          </li>
         <?php endif; ?>
 
         <li class="item-nav"><a href="creditos.php" class="conteudo-barra-lateral">Créditos</a></li>
@@ -140,26 +158,41 @@
             $formacao = textoOuTraco($row["formacao"] ?? "");
             $compl = textoOuTraco($row["cursos_complementares"] ?? "");
             $foto = $hasFotoCol ? trim((string)($row["foto"] ?? "")) : "";
+
+            // Inicial do nome (UTF-8 / acentos)
+            $nomeRaw = trim((string)($row['nome'] ?? ''));
+            if ($nomeRaw === '') {
+              $inicial = '?';
+            } else {
+              if (function_exists('mb_substr') && function_exists('mb_strtoupper')) {
+                $inicial = mb_strtoupper(mb_substr($nomeRaw, 0, 1, 'UTF-8'), 'UTF-8');
+              } else {
+                $inicial = strtoupper(substr($nomeRaw, 0, 1));
+              }
+            }
           ?>
+
           <div class="card"
             data-id="<?= (int)$row['id_professor'] ?>"
-            data-nome="<?= htmlspecialchars($row['nome']) ?>"
-            data-formacao="<?= htmlspecialchars($row['formacao']) ?>"
-            data-telefone="<?= htmlspecialchars($row['telefone']) ?>"
-            data-email="<?= htmlspecialchars($row['email']) ?>"
+            data-nome="<?= htmlspecialchars($row['nome'] ?? '') ?>"
+            data-formacao="<?= htmlspecialchars($row['formacao'] ?? '') ?>"
+            data-telefone="<?= htmlspecialchars($row['telefone'] ?? '') ?>"
+            data-email="<?= htmlspecialchars($row['email'] ?? '') ?>"
             data-cursos="<?= htmlspecialchars($row['cursos_complementares'] ?? '') ?>"
             data-foto="<?= htmlspecialchars($foto) ?>"
           >
-
             <!-- Cabeçalho do card -->
             <div class="card-header">
-              <button class="avatar" type="button" title="Ver foto" aria-label="Ver foto">
-                <?php if ($foto !== "" && file_exists(__DIR__ . "/../IMG/professores/" . $foto)): ?>
+              <?php $temFoto = ($foto !== "" && file_exists(__DIR__ . "/../IMG/professores/" . $foto)); ?>
+
+              <button class="avatar <?= $temFoto ? '' : 'is-fallback' ?>" type="button" title="Ver foto" aria-label="Ver foto">
+                <?php if ($temFoto): ?>
                   <img src="../IMG/professores/<?= htmlspecialchars($foto) ?>" alt="Foto de <?= htmlspecialchars($row['nome']) ?>" />
                 <?php else: ?>
-                  <span class="avatar__fallback" aria-hidden="true">SEM FOTO</span>
+                  <span class="avatar__fallback" aria-hidden="true"><?= htmlspecialchars($inicial) ?></span>
                 <?php endif; ?>
               </button>
+
 
               <h3 class="professor-nome"><?= htmlspecialchars($row["nome"] ?? "") ?></h3>
 
@@ -170,28 +203,25 @@
 
                 <button type="button" class="icon-btn delete btn-delete" title="Excluir professor"
                   data-id="<?= (int)$row['id_professor'] ?>"
-                  data-nome="<?= htmlspecialchars($row['nome']) ?>"
+                  data-nome="<?= htmlspecialchars($row['nome'] ?? '') ?>"
                 >
                   <img src="../IMG/lixeiraIcon.png" alt="excluir">
                 </button>
               </div>
             </div>
+
             <div class="line"></div>
 
             <div class="info">
               <p class="linha-info"><strong>Formação:</strong> <?= htmlspecialchars($formacao) ?></p>
-
               <p class="linha-info"><strong>Área de Atuação:</strong> <?= htmlspecialchars($compl) ?></p>
-
               <p class="linha-info"><strong>Telefone:</strong> <?= htmlspecialchars(textoOuTraco($row["telefone"] ?? "")) ?></p>
-
               <p class="linha-info"><strong>Email:</strong> <?= htmlspecialchars(textoOuTraco($row["email"] ?? "")) ?></p>
-
               <p class="linha-info"><strong>Turma(s):</strong> <?= htmlspecialchars($turmas) ?></p>
-
               <p class="linha-info"><strong>Turno(s):</strong> <?= htmlspecialchars($turnos) ?></p>
             </div>
           </div>
+
         <?php endwhile; ?>
       </div>
     </section>
@@ -221,6 +251,7 @@
             <input type="hidden" name="fotoCortada" id="fotoCortada" value="">
             <small class="foto-ajuda">Clique no círculo para escolher/alterar a foto</small>
           </div>
+
           <div class="inputs">
             <label for="nomeProfessor">Nome do Professor</label>
             <input type="text" name="nomeProfessor" class="nome_prof" id="nomeProfessor" placeholder="Digite o nome" required>
@@ -252,40 +283,40 @@
       </div>
     </div>
   </div>
+
   <!-- MODAL EXCLUIR -->
-<div class="modal" id="modalExcluir" aria-hidden="true">
-  <div class="modal__backdrop" data-close-excluir></div>
+  <div class="modal" id="modalExcluir" aria-hidden="true">
+    <div class="modal__backdrop" data-close-excluir></div>
 
-  <div class="modal__content modal__content--pequeno" role="dialog" aria-modal="true" aria-labelledby="modalExcluirTitle">
-    <header class="modal__header">
-      <h2 id="modalExcluirTitle" class="titulo-perigo">⚠️ Confirmar Exclusão</h2>
-      <button class="modal__close" type="button" aria-label="Fechar" data-close-excluir>×</button>
-    </header>
+    <div class="modal__content modal__content--pequeno" role="dialog" aria-modal="true" aria-labelledby="modalExcluirTitle">
+      <header class="modal__header">
+        <h2 id="modalExcluirTitle" class="titulo-perigo">⚠️ Confirmar Exclusão</h2>
+        <button class="modal__close" type="button" aria-label="Fechar" data-close-excluir>×</button>
+      </header>
 
-    <div class="modal__body modal__body--center">
-      <p>Tem certeza que deseja excluir o professor <strong id="nomeProfessorExcluir" class="nome-destaque"></strong>?</p>
-      <p class="texto-aviso">Esta ação não pode ser desfeita.</p>
+      <div class="modal__body modal__body--center">
+        <p>Tem certeza que deseja excluir o professor <strong id="nomeProfessorExcluir" class="nome-destaque"></strong>?</p>
+        <p class="texto-aviso">Esta ação não pode ser desfeita.</p>
 
-      <form action="../PHP/excluirProfessor.php" method="POST" class="form-excluir">
-        <input type="hidden" name="id_professor" id="delete_prof_id">
-        <div class="acoes-excluir">
-          <button type="button" class="botao-secundario" data-close-excluir>Cancelar</button>
-          <button type="submit" class="botao-perigo">Excluir</button>
-        </div>
-      </form>
+        <form action="../PHP/excluirProfessor.php" method="POST" class="form-excluir">
+          <input type="hidden" name="id_professor" id="delete_prof_id">
+          <div class="acoes-excluir">
+            <button type="button" class="botao-secundario" data-close-excluir>Cancelar</button>
+            <button type="submit" class="botao-perigo">Excluir</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- VISUALIZADOR DE FOTO -->
-<div class="foto-viewer" id="fotoViewer" aria-hidden="true">
-  <div class="foto-viewer__backdrop" data-viewer-close></div>
-  <div class="foto-viewer__content" role="dialog" aria-modal="true" aria-label="Foto do professor">
-    <button class="foto-viewer__close" type="button" aria-label="Fechar" data-viewer-close>×</button>
-    <img id="fotoViewerImg" alt="Foto do professor">
+  <!-- VISUALIZADOR DE FOTO -->
+  <div class="foto-viewer" id="fotoViewer" aria-hidden="true">
+    <div class="foto-viewer__backdrop" data-viewer-close></div>
+    <div class="foto-viewer__content" role="dialog" aria-modal="true" aria-label="Foto do professor">
+      <button class="foto-viewer__close" type="button" aria-label="Fechar" data-viewer-close>×</button>
+      <img id="fotoViewerImg" alt="Foto do professor">
+    </div>
   </div>
-</div>
-
 
   <!-- Modal de recorte de foto (estilo Discord) -->
   <div class="crop-modal" id="cropModal" aria-hidden="true">
@@ -325,6 +356,5 @@
       <img id="photoViewerImg" alt="Foto do professor">
     </div>
   </div>
-
 </body>
 </html>

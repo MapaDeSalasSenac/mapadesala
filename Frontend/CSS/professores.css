@@ -820,3 +820,75 @@ to { transform: scale(1); opacity: 1; }}
   height: 38px;
   border-radius: 12px;
 }
+/* garante tamanho/forma do avatar */
+.avatar{
+  width: 46px;          /* ajusta se quiser */
+  height: 46px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: #f57c00;  /* ou var(--laranja) se existir */
+  cursor: pointer;
+}
+
+/* imagem ocupa tudo */
+.avatar img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* a letra NÃO some */
+.avatar__fallback{
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 18px;
+  line-height: 1;
+  color: #fff;
+  text-transform: uppercase;
+}
+.avatar{
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+}
+
+/* quando NÃO tem foto */
+.avatar.is-fallback{
+  display: grid !important;
+  place-items: center !important;
+
+}
+
+.avatar img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar__fallback{
+  display: grid !important;
+  place-items: center !important;
+  width: 100% !important;
+  height: 100% !important;
+
+  color: #FF6B2C !important;
+  font-weight: 800 !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  text-transform: uppercase !important;
+
+  opacity: 1 !important;
+  visibility: visible !important;
+}
