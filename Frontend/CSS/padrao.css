@@ -1141,7 +1141,7 @@ body{
   box-shadow:0 2px 8px rgba(0,0,0,.15);
 }
 
-.logo-topo img{ height:38px; }
+.logo-topo img{ height:38px; margin-left: 55px;}
 
 .botao-menu{
   border:none;

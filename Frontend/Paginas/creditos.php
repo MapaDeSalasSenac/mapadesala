@@ -158,9 +158,9 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
         </article>
 
         <article class="creditos-card rodape-projeto">
-          <div class="rodape-linha"><strong>Sistema de Gestão SENAC</strong></div>
+          <div class="rodape-linha"><strong>Sistema de Gerenciamento de Salas - SENAC-MA</strong></div>
           <div class="rodape-linha">Versão 1.0.0 | 2026</div>
-          <div class="rodape-linha">Desenvolvido por Turma Técnico de Informatica para a Internet</div>
+          <div class="rodape-linha">Desenvolvido por Turma Técnico de Informatica para a Internet 2025.8.20</div>
         </article>
       </div>
     </section>
