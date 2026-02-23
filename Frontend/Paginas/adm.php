@@ -96,6 +96,7 @@ $result = $conexao->query($sql);
         <li class="item-nav"><a href="professores.php" class="conteudo-barra-lateral">Professores</a></li>
         <li class="item-nav"><a href="salas.php" class="conteudo-barra-lateral">Salas</a></li>
         <li class="item-nav"><a href="turmas.php" class="conteudo-barra-lateral">Turmas</a></li>
+        <li class="item-nav"><a href="relatorios.php" class="conteudo-barra-lateral">Relatórios</a></li>
         <?php if (isset($_SESSION['id_usuario']) && (int)$_SESSION['id_usuario'] === 1): ?>
           <li class="item-nav<?php echo (strpos(strtolower($_SERVER['PHP_SELF']), 'adm.php') !== false) ? ' ativo' : ''; ?>"><a href="adm.php" class="conteudo-barra-lateral">Administração</a></li>
         <?php endif; ?>
