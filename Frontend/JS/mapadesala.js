@@ -9,6 +9,8 @@
   const botaoFiltro = document.getElementById("botao-filtro");
   const botaoUsuario = document.getElementById("botao-usuario");
 
+  const inputDataMapa = document.getElementById("mapa-data");
+
   const botaoMenu = document.getElementById("botao-menu");
   const overlayMobile = document.querySelector(".sobreposicao-mobile");
   const relogioEl = document.getElementById("relogio-lateral");
@@ -706,6 +708,21 @@
     setSubtitle(nextView, appState.date);
   }
 
+  function setBaseDateISO(nextISO) {
+    if (!nextISO) return;
+    appState.date = nextISO;
+
+    // Mantém estado do mês coerente quando estiver no mês
+    if (appState.view === "month") {
+      appState.monthCursorISO = startOfMonthISO(appState.date);
+      appState.monthSelectedDate = appState.date;
+      ensureFeriadosBR(Number(appState.monthCursorISO.slice(0, 4))).catch(() => {});
+    }
+
+    setSubtitle(appState.view, appState.date);
+    rerenderCurrent();
+  }
+
   function mountFirst() {
     palco.innerHTML = "";
     const first = document.createElement("div");
@@ -734,6 +751,12 @@
     botoesView.forEach((btn) =>
       btn.addEventListener("click", () => switchView(btn.dataset.view))
     );
+
+    // data base do mapa
+    inputDataMapa?.addEventListener("change", () => {
+      const iso = inputDataMapa.value;
+      setBaseDateISO(iso);
+    });
 
     // abrir filtros
     botaoFiltro?.addEventListener("click", abrirModalFiltros);
@@ -836,6 +859,9 @@
 
     await ensureFeriadosBR(new Date().getFullYear()).catch(() => {});
     atualizarIndicadorFiltro();
+
+    // sincroniza o calendário com a data base
+    if (inputDataMapa) inputDataMapa.value = appState.date;
 
     mountFirst();
     bindEvents();

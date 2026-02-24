@@ -51,6 +51,23 @@
   gap:12px;
 }
 
+.mapa-data{
+  height:36px;
+  padding:0 10px;
+  border-radius:10px;
+  border:1px solid rgba(0,0,0,.08);
+  background:#fff;
+  color:#374151;
+  font-weight:800;
+  font-size:13px;
+}
+
+.mapa-data:focus{
+  outline:none;
+  box-shadow:0 0 0 3px rgba(255,107,44,.18);
+  border-color:rgba(255,107,44,.55);
+}
+
 .filtro-periodo{
   display:flex;
   gap:4px;

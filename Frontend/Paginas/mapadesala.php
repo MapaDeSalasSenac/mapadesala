@@ -76,6 +76,13 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
             <button class="botao-periodo" data-view="month" role="tab" aria-selected="false">Mês</button>
           </div>
 
+          <input
+            type="date"
+            id="mapa-data"
+            class="mapa-data"
+            aria-label="Escolher data"
+          />
+
           <button class="botao-filtro" id="botao-filtro" aria-label="Filtros">
             <img src="../IMG/filtro.png" alt="Filtro" />
           </button>

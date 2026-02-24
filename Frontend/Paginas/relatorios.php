@@ -120,6 +120,11 @@ if ($qs) {
           <button class="chip" data-range="today" type="button">Hoje</button>
           <button class="chip" data-range="week" type="button">Esta semana</button>
           <button class="chip" data-range="month" type="button">Este mês</button>
+
+          <div class="atalho-data" title="Escolha a data base para Hoje/Semana/Mês">
+            <label for="base-date">Data</label>
+            <input id="base-date" type="date" />
+          </div>
         </div>
       </div>
 

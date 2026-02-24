@@ -8,6 +8,7 @@ const elCampoSala = document.getElementById("campo-sala");
 
 const btnGerar = document.getElementById("btn-gerar");
 const btnPdf = document.getElementById("btn-pdf");
+const elBaseDate = document.getElementById("base-date");
 
 
 const elStatus = document.getElementById("status");
@@ -19,11 +20,23 @@ function ymd(d) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-let currentRange = "week"; // today | week | month
+// Range atual selecionado pelos chips.
+// Padrão: "today" (a data escolhida no calendário vira a base para dia/semana/mês)
+let currentRange = "today"; // today | week | month
+
+function getBaseDay() {
+  // data base escolhida pelo usuário (YYYY-MM-DD)
+  const v = elBaseDate && elBaseDate.value;
+  if (v && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    const [y, m, d] = v.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
 
 function getRange(kind) {
-  const now = new Date();
-  const day = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const day = getBaseDay();
 
   if (kind === "today") {
     const v = ymd(day);
@@ -238,8 +251,6 @@ async function gerar() {
       ];
       elTabelaWrap.appendChild(makeTable(cols, rows));
       setStatus(`${rows.length} turma(s) no período.`, "ok");
-      // também permite salvar/imprimir em PDF
-      if (btnPdf) btnPdf.disabled = false;
       return;
     }
 
@@ -252,8 +263,6 @@ async function gerar() {
       ];
       elTabelaWrap.appendChild(makeTable(cols, rows));
       setStatus(`${rows.length} linha(s).`, "ok");
-      // também permite salvar/imprimir em PDF
-      if (btnPdf) btnPdf.disabled = false;
       return;
     }
 
@@ -397,6 +406,19 @@ function escapeHtml(str) {
 document.addEventListener("DOMContentLoaded", () => {
   updateCamposVisiveis();
   setActiveRange(currentRange);
+
+  // default: hoje
+  if (elBaseDate && !elBaseDate.value) {
+    const now = new Date();
+    elBaseDate.value = ymd(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
+  }
+
+  if (elBaseDate) {
+    elBaseDate.addEventListener("change", () => {
+      // mudou a data base -> invalida PDF até gerar de novo
+      if (btnPdf) btnPdf.disabled = true;
+    });
+  }
 
   elTipo.addEventListener("change", () => {
     updateCamposVisiveis();

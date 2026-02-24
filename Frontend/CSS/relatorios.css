@@ -30,10 +30,9 @@
 .card-filtros,
 .card-resultado{
   background: #fff;
-  border-radius: 18px;
   padding: 18px;
-  border: 1px solid rgba(0,0,0,.06);
-  box-shadow: 0 10px 26px rgba(0,0,0,.06);
+  border-radius: 10px;
+  border:1px solid #e5e7eb;
 }
 
 .card-filtros{ margin-bottom: 16px; }
@@ -119,6 +118,36 @@
   display:flex;
   gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.atalho-data{
+  margin-left: auto;
+  display:flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  background: #fff;
+}
+
+.atalho-data label{
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 900;
+}
+
+.atalho-data input[type="date"]{
+  border: 0;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  color: var(--texto);
+}
+
+.atalho-data input[type="date"]:focus{
+  outline: none;
 }
 
 .chip{
@@ -203,6 +232,7 @@
 @media (max-width: 1100px){
   .campo{ grid-column: span 6; }
   .acoes{ grid-column: span 12; justify-content: flex-start; }
+  .atalho-data{ margin-left: 0; width: 100%; justify-content: space-between; }
 }
 
 /* Modal (pré-visualizar / PDF) - estilo compatível com o padrão do site */

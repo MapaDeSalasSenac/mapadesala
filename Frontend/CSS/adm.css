@@ -43,9 +43,9 @@ body{
 
 .card-adm{
     background:#fff;
-    border-radius:18px;
     padding:16px 18px 18px;
-    border:1px solid rgba(0,0,0,.08);
+    border-radius: 10px;
+    border:1px solid #e5e7eb;
 }
 
 /* TOPO DO CARD */
