@@ -28,9 +28,15 @@
     const year = dt.getFullYear();
     const day = dt.getDate();
 
-    if (state.view === "day") subtituloEl.textContent = `Hoje • ${day} de ${capitalize(month)} de ${year}`;
+    if (state.view === "day") {
+      const d0 = new Date();
+      const hojeISO = `${d0.getFullYear()}-${String(d0.getMonth() + 1).padStart(2, "0")}-${String(d0.getDate()).padStart(2, "0")}`;
+      const prefix = (state.date === hojeISO) ? "Hoje" : "Dia";
+      subtituloEl.textContent = `${prefix} • ${day} de ${capitalize(month)} de ${year}`;
+    }
     if (state.view === "week") subtituloEl.textContent = `Semana • a partir de ${formatDateBR(util.startOfWeekISO(state.date))}`;
     if (state.view === "month") subtituloEl.textContent = `Mês • ${capitalize(month)} de ${year}`;
+    if (state.view === "year") subtituloEl.textContent = `Ano • ${year}`;
   }
 
   function measureViewHeight(viewEl) {
@@ -526,9 +532,74 @@
     `;
   }
 
+  // =======================
+  // YEAR
+  // =======================
+  function renderYear(state, util, deps) {
+    const year = new Date(state.date + "T00:00:00").getFullYear();
+    const meses = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(year, i, 1);
+      const mesISO = `${year}-${String(i + 1).padStart(2, "0")}`;
+      const nome = d.toLocaleString("pt-BR", { month: "long" });
+      return { mesISO, nome: capitalize(nome) };
+    });
+
+    // filtros relevantes pra contagem
+    const salaIdFiltro = String(state.filtros?.salaId ?? "all");
+    const qProf = (deps?.norm ? deps.norm(state.filtros?.professor) : String(state.filtros?.professor || "").toLowerCase());
+    const turnosAtivos = state.filtros?.turnos || { matutino: true, vespertino: true, noturno: true };
+
+    const ag = Array.isArray(state.data?.agendamentos) ? state.data.agendamentos : [];
+
+    function contaMes(mesISO) {
+      // conta agendamentos (ocupadas) do mês, respeitando sala/professor/turnos
+      let total = 0;
+      for (const a of ag) {
+        if (!a?.data || String(a.data).slice(0, 7) !== mesISO) continue;
+        if (salaIdFiltro !== "all" && String(a.salaId) !== salaIdFiltro) continue;
+        if (!turnosAtivos[a.turno]) continue;
+        if (qProf) {
+          const ap = deps?.norm ? deps.norm(a.professor) : String(a.professor || "").toLowerCase();
+          if (!ap.includes(qProf)) continue;
+        }
+        total++;
+      }
+      return total;
+    }
+
+    const cards = meses
+      .map(({ mesISO, nome }) => {
+        const qtd = contaMes(mesISO);
+        return `
+          <button type="button" class="card-mes-ano" data-act="year-month" data-month="${mesISO}" aria-label="Abrir ${escapeHTML(nome)}">
+            <div class="titulo-mes-ano">${escapeHTML(nome)}</div>
+            <div class="meta-mes-ano">${qtd} agendamento(s)</div>
+          </button>
+        `;
+      })
+      .join("");
+
+    return `
+      <div class="ano">
+        <div class="navegacao-ano">
+          <button class="botao-navegacao-mes" type="button" data-act="year-prev" aria-label="Ano anterior">‹</button>
+          <div class="titulo-navegacao-mes">${year}</div>
+          <button class="botao-navegacao-mes" type="button" data-act="year-next" aria-label="Próximo ano">›</button>
+        </div>
+
+        <div class="grade-ano">
+          ${cards}
+        </div>
+
+        <div class="nota-ano">Clique em um mês para abrir a visualização mensal.</div>
+      </div>
+    `;
+  }
+
   function renderHTML(state, util, deps) {
     if (state.view === "day") return renderDay(state, util, deps);
     if (state.view === "week") return renderWeek(state, util, deps);
+    if (state.view === "year") return renderYear(state, util, deps);
     return renderMonth(state, util, deps);
   }
 

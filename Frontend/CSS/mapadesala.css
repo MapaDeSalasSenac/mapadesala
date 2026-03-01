@@ -139,6 +139,72 @@
   min-height:120px;
 }
 
+/* =========================
+   ANO
+   ========================= */
+.ano{
+  padding: 14px;
+}
+
+.navegacao-ano{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  margin-bottom: 14px;
+}
+
+.grade-ano{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 980px){
+  .grade-ano{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px){
+  .grade-ano{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.card-mes-ano{
+  border:1px solid rgba(0,0,0,.08);
+  background:#fff;
+  border-radius: 14px;
+  box-shadow: 0 10px 22px rgba(0,0,0,.06);
+  padding: 14px;
+  cursor:pointer;
+  text-align:left;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.card-mes-ano:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(0,0,0,.08);
+}
+
+.titulo-mes-ano{
+  font-weight: 900;
+  color:#111827;
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+.meta-mes-ano{
+  color:#6b7280;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.nota-ano{
+  margin-top: 12px;
+  color:#6b7280;
+  font-size: 12px;
+  font-weight: 700;
+  text-align:center;
+}
+
 .tela{
   position:absolute;
   top:0; left:0;

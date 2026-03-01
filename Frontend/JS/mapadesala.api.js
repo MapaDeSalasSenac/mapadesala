@@ -44,6 +44,12 @@
       return { start: ini, end: fim };
     }
 
+    if (state.view === "year") {
+      const ini = util.startOfYearISO(state.date);
+      const fim = util.shiftISO(util.addYearsISO(ini, 1), -1);
+      return { start: ini, end: fim };
+    }
+
     // month
     const first = state.monthCursorISO || util.startOfMonthISO(state.date);
     const { gridDays } = util.monthGrid(first);

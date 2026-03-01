@@ -15,8 +15,9 @@
   const botaoMenu = document.getElementById("botao-menu");
   const overlayMobile = document.querySelector(".sobreposicao-mobile");
   const relogioEl = document.getElementById("relogio-lateral");
+  const inputData = document.getElementById("mapa-data");
 
-  const ORDEM_VIEWS = ["day", "week", "month"];
+  const ORDEM_VIEWS = ["day", "week", "month", "year"];
 
   const TURNOS = [
     { id: "matutino", rotulo: "Manhã", range: [6, 12] },
@@ -29,6 +30,7 @@
     date: toISODate(new Date()),
     monthCursorISO: null,
     monthSelectedDate: null,
+    yearCursor: new Date().getFullYear(),
     data: { 
       salas: [], 
       agendamentos: [],
@@ -71,6 +73,18 @@
     return toISODate(d);
   }
 
+  function startOfYearISO(dateISO) {
+    const d = new Date(dateISO + "T00:00:00");
+    d.setMonth(0, 1);
+    return toISODate(d);
+  }
+
+  function addYearsISO(dateISO, delta) {
+    const d = new Date(dateISO + "T00:00:00");
+    d.setFullYear(d.getFullYear() + delta);
+    return toISODate(d);
+  }
+
   function addMonthsISO(monthISO, delta) {
     const d = new Date(monthISO + "T00:00:00");
     d.setMonth(d.getMonth() + delta);
@@ -87,7 +101,7 @@
     return { gridDays };
   }
 
-  const util = { toISODate, shiftISO, startOfWeekISO, startOfMonthISO, addMonthsISO, monthGrid };
+  const util = { toISODate, shiftISO, startOfWeekISO, startOfMonthISO, startOfYearISO, addMonthsISO, addYearsISO, monthGrid };
 
   // ======== index ========
   function slotKey(salaId, dataISO, turno) {
@@ -407,6 +421,10 @@
       appState.monthSelectedDate = appState.date;
     }
 
+    if (nextView === "year") {
+      appState.yearCursor = new Date(appState.date + "T00:00:00").getFullYear();
+    }
+
     await refreshData();
 
     const html = window.MapaSalaRender.renderHTML(appState, util, getDeps());
@@ -414,6 +432,31 @@
     window.MapaSalaRender.animateSwap(palco, html, direction);
 
     setActiveButton(nextView);
+    window.MapaSalaRender.setSubtitle(subtituloEl, appState, util);
+  }
+
+  async function applyDate(nextISO) {
+    if (!nextISO || nextISO === appState.date) {
+      // ainda assim garante que input esteja coerente
+      if (inputData && inputData.value !== appState.date) inputData.value = appState.date;
+      return;
+    }
+
+    appState.date = nextISO;
+
+    if (appState.view === "month") {
+      appState.monthCursorISO = startOfMonthISO(appState.date);
+      appState.monthSelectedDate = appState.date;
+    }
+
+    if (appState.view === "year") {
+      appState.yearCursor = new Date(appState.date + "T00:00:00").getFullYear();
+    }
+
+    if (inputData) inputData.value = appState.date;
+
+    await refreshData();
+    rerenderCurrent();
     window.MapaSalaRender.setSubtitle(subtituloEl, appState, util);
   }
 
@@ -426,6 +469,12 @@
   // ======== eventos ========
   function bindEvents() {
     botoesView.forEach((btn) => btn.addEventListener("click", () => switchView(btn.dataset.view)));
+
+    // data selecionada (base para dia/semana/mês/ano)
+    inputData?.addEventListener("change", (e) => {
+      const v = e.target?.value;
+      if (v) applyDate(v);
+    });
 
     botaoFiltro?.addEventListener("click", abrirModalFiltros);
 
@@ -452,6 +501,11 @@
 
         appState.monthCursorISO = addMonthsISO(appState.monthCursorISO, delta);
 
+        // por padrão, seleciona o 1º dia do mês e sincroniza base date
+        appState.monthSelectedDate = appState.monthCursorISO;
+        appState.date = appState.monthSelectedDate;
+        if (inputData) inputData.value = appState.date;
+
         await refreshData();
 
         if (appState.monthSelectedDate?.slice(0, 7) !== appState.monthCursorISO.slice(0, 7)) {
@@ -467,6 +521,11 @@
 
       appState.monthSelectedDate = cell.dataset.date;
 
+      // sincroniza base date + input + subtítulo
+      appState.date = appState.monthSelectedDate;
+      if (inputData) inputData.value = appState.date;
+      window.MapaSalaRender.setSubtitle(subtituloEl, appState, util);
+
       const current = palco.querySelector(".tela");
       if (!current) return;
 
@@ -479,6 +538,36 @@
       if (painel) painel.innerHTML = window.MapaSalaRender.renderPainelDia(appState, getDeps(), appState.monthSelectedDate);
 
       window.MapaSalaRender.setStageHeight(palco, current, true);
+    });
+
+    // ano: navegação + abrir mês
+    palco.addEventListener("click", async (e) => {
+      if (appState.view !== "year") return;
+
+      const act = e.target.closest("[data-act]")?.dataset.act;
+      if (!act) return;
+
+      if (act === "year-prev" || act === "year-next") {
+        const delta = act === "year-prev" ? -1 : 1;
+
+        // move o ano mantendo dia/mês se possível
+        appState.date = addYearsISO(appState.date, delta);
+        appState.yearCursor = new Date(appState.date + "T00:00:00").getFullYear();
+        if (inputData) inputData.value = appState.date;
+
+        await refreshData();
+        rerenderCurrent();
+        window.MapaSalaRender.setSubtitle(subtituloEl, appState, util);
+        return;
+      }
+
+      if (act === "year-month") {
+        const month = e.target.closest("[data-month]")?.dataset.month;
+        if (!month) return;
+        // abre o mês no 1º dia
+        await applyDate(`${month}-01`);
+        await switchView("month");
+      }
     });
 
     window.addEventListener("resize", () => {
@@ -518,6 +607,9 @@
       bindEvents();
       startClock();
       setActiveButton(appState.view);
+
+      // input data começa em hoje (e fica pronto pro usuário)
+      if (inputData) inputData.value = appState.date;
     } catch (err) {
       console.error(err);
       palco.innerHTML = `<div class="vazio-painel">Erro ao carregar mapa: ${window.MapaSalaRender.escapeHTML(err.message)}</div>`;

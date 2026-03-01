@@ -71,9 +71,10 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
         <div class="controles-mapa">
           <div class="filtro-periodo" role="tablist" aria-label="Visualização">
-            <button class="botao-periodo ativo" data-view="day" role="tab" aria-selected="true">Hoje</button>
+            <button class="botao-periodo ativo" data-view="day" role="tab" aria-selected="true">Dia</button>
             <button class="botao-periodo" data-view="week" role="tab" aria-selected="false">Semana</button>
             <button class="botao-periodo" data-view="month" role="tab" aria-selected="false">Mês</button>
+            <button class="botao-periodo" data-view="year" role="tab" aria-selected="false">Ano</button>
           </div>
 
           <input
